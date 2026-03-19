@@ -1,0 +1,32 @@
+## Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+## Virtual environments
+.venv/
+venv/
+ENV/
+
+## Test / typecheck caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+## Packaging
+build/
+dist/
+*.egg-info/
+wheels/
+
+## OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.cursor/
+
+## Environment / secrets
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
