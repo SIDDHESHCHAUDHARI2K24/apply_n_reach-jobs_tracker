@@ -15,6 +15,11 @@ from app.features.auth.routers import auth_router
 from app.features.core.config import settings
 from app.features.user_profile.personal.router import router as profile_router
 from app.features.user_profile.education.router import router as education_router
+from app.features.user_profile.experience.router import router as experience_router
+from app.features.user_profile.projects.router import router as projects_router
+from app.features.user_profile.research.router import router as research_router
+from app.features.user_profile.certifications.router import router as certifications_router
+from app.features.user_profile.skills.router import router as skills_router
 
 
 def create_app() -> FastAPI:
@@ -56,5 +61,10 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(profile_router)
     app.include_router(education_router)
+    app.include_router(experience_router)
+    app.include_router(projects_router)
+    app.include_router(research_router)
+    app.include_router(certifications_router)
+    app.include_router(skills_router)
 
     return app
