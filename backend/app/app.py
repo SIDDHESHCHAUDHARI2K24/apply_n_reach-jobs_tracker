@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 from app.features.auth.routers import auth_router
 from app.features.core.config import settings
 from app.features.user_profile.personal.router import router as profile_router
+from app.features.user_profile.education.router import router as education_router
 
 
 def create_app() -> FastAPI:
@@ -54,5 +55,6 @@ def create_app() -> FastAPI:
     # Feature routers.
     app.include_router(auth_router)
     app.include_router(profile_router)
+    app.include_router(education_router)
 
     return app
