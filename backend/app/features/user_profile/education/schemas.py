@@ -68,10 +68,10 @@ class EducationCreate(BaseSchema):
 
     @field_validator("reference_links", mode="before")
     @classmethod
-    def validate_links(cls, v):
+    def sanitize_links(cls, v):
         if not isinstance(v, list):
             raise ValueError("reference_links must be a list")
-        return [str(item) for item in v]
+        return [sanitize_text(str(item), max_length=2048) for item in v]
 
     @model_validator(mode="after")
     def validate_date_order(self):

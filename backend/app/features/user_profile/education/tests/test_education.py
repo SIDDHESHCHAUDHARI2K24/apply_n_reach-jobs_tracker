@@ -34,7 +34,8 @@ def test_list_educations_empty(authenticated_client):
 def test_add_and_list_education(authenticated_client):
     client, _ = authenticated_client
     _create_profile(client)
-    client.post("/profile/education", json=_edu_payload())
+    post_resp = client.post("/profile/education", json=_edu_payload())
+    assert post_resp.status_code == 201
     resp = client.get("/profile/education")
     assert resp.status_code == 200
     assert len(resp.json()) == 1
