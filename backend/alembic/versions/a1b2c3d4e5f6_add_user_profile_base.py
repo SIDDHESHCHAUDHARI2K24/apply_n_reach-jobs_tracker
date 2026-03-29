@@ -43,4 +43,4 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Drop personal_details and user_profiles tables."""
     op.execute("DROP TABLE IF EXISTS personal_details")
-    op.execute("DROP TABLE IF EXISTS user_profiles")
+    op.execute("DROP TABLE IF EXISTS user_profiles CASCADE")

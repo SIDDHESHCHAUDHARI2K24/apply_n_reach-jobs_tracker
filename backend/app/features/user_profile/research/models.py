@@ -2,8 +2,6 @@
 
 import asyncpg
 
-from app.features.user_profile.personal.models import ensure_profile_schema
-
 
 RESEARCHES_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS researches (
@@ -19,6 +17,5 @@ CREATE TABLE IF NOT EXISTS researches (
 
 
 async def ensure_research_schema(conn: asyncpg.Connection) -> None:
-    """Create user_profiles, personal_details, and researches tables if they do not exist."""
-    await ensure_profile_schema(conn)
+    """Create the researches table if it does not exist."""
     await conn.execute(RESEARCHES_TABLE_SQL)

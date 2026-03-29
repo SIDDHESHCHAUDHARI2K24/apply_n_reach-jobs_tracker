@@ -2,8 +2,6 @@
 
 import asyncpg
 
-from app.features.user_profile.personal.models import ensure_profile_schema
-
 
 CERTIFICATIONS_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS certifications (
@@ -18,6 +16,5 @@ CREATE TABLE IF NOT EXISTS certifications (
 
 
 async def ensure_certifications_schema(conn: asyncpg.Connection) -> None:
-    """Create user_profiles, personal_details, and certifications tables if they do not exist."""
-    await ensure_profile_schema(conn)
+    """Create the certifications table if it does not exist."""
     await conn.execute(CERTIFICATIONS_TABLE_SQL)

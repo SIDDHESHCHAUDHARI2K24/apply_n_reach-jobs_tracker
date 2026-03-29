@@ -2,8 +2,6 @@
 
 import asyncpg
 
-from app.features.user_profile.personal.models import ensure_profile_schema
-
 
 PROJECTS_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS projects (
@@ -21,6 +19,5 @@ CREATE TABLE IF NOT EXISTS projects (
 
 
 async def ensure_projects_schema(conn: asyncpg.Connection) -> None:
-    """Create user_profiles, personal_details, and projects tables if they do not exist."""
-    await ensure_profile_schema(conn)
+    """Create the projects table if it does not exist."""
     await conn.execute(PROJECTS_TABLE_SQL)
