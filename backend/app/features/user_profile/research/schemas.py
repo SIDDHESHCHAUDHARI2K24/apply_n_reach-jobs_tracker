@@ -1,0 +1,45 @@
+"""Pydantic schemas for the research sub-feature."""
+from datetime import datetime
+from typing import Optional
+
+from pydantic import field_validator
+
+from app.features.core.base_model import BaseSchema
+from app.features.user_profile.validators import sanitize_text
+
+
+class ResearchCreate(BaseSchema):
+    """Request schema for creating or updating a research entry."""
+
+    paper_name: str
+    publication_link: str
+    description: Optional[str] = None
+
+    @field_validator("paper_name", mode="before")
+    @classmethod
+    def sanitize_paper_name(cls, v):
+        return sanitize_text(v, max_length=500)
+
+    @field_validator("publication_link", mode="before")
+    @classmethod
+    def sanitize_publication_link(cls, v):
+        return sanitize_text(str(v), max_length=2048)
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def sanitize_description(cls, v):
+        if v is None:
+            return v
+        return sanitize_text(v, max_length=2000)
+
+
+class ResearchResponse(BaseSchema):
+    """Response schema for a research entry."""
+
+    id: int
+    profile_id: int
+    paper_name: str
+    publication_link: str
+    description: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
