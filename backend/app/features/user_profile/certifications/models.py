@@ -1,0 +1,23 @@
+"""Low-level SQL helpers for the certifications table."""
+
+import asyncpg
+
+from app.features.user_profile.personal.models import ensure_profile_schema
+
+
+CERTIFICATIONS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS certifications (
+    id SERIAL PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+    certification_name TEXT NOT NULL,
+    verification_link TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+
+async def ensure_certifications_schema(conn: asyncpg.Connection) -> None:
+    """Create user_profiles, personal_details, and certifications tables if they do not exist."""
+    await ensure_profile_schema(conn)
+    await conn.execute(CERTIFICATIONS_TABLE_SQL)
