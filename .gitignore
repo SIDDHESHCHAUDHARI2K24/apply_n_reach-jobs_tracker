@@ -13,6 +13,13 @@ ENV/
 .mypy_cache/
 .ruff_cache/
 
+## Coverage / reports
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.hypothesis/
+
 ## Packaging
 build/
 dist/
@@ -23,7 +30,10 @@ wheels/
 .DS_Store
 Thumbs.db
 .vscode/
-.cursor/
+
+## Agent / editor (any depth)
+**/.claude/
+**/.cursor/
 
 ## Git worktrees
 .worktrees/
@@ -33,3 +43,7 @@ Thumbs.db
 **/.env.*
 !.env.example
 !**/.env.example
+
+## Logs / local tool state (optional noise)
+*.log
+.dmypy.json
