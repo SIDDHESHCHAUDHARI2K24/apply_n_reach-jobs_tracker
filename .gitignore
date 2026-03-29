@@ -25,6 +25,9 @@ Thumbs.db
 .vscode/
 .cursor/
 
+## Git worktrees
+.worktrees/
+
 ## Environment / secrets
 **/.env
 **/.env.*
