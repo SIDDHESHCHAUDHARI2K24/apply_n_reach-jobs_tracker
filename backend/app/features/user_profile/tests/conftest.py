@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 
 from app.app import create_app
 from app.features.auth.utils import get_current_user
-from app.features.core.dependencies import DbDep
 
 
 def make_app():
