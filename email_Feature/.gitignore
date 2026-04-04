@@ -1,0 +1,22 @@
+# Environment variables — never commit API keys
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# VS Code / Cursor
+.vscode/
+.cursor/
+
+# OS
+.DS_Store
+Thumbs.db
