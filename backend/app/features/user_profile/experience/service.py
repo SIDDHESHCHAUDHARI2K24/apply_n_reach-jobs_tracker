@@ -3,8 +3,10 @@ import json
 import asyncpg
 from fastapi import HTTPException, status
 
+from app.features.core.query_helpers import build_partial_update_query
 from app.features.user_profile.experience import models
-from app.features.user_profile.experience.schemas import ExperienceCreate
+from app.features.user_profile.experience.schemas import ExperienceCreate, ExperienceUpdate
+from app.features.user_profile.experience.schemas import _parse_month_year
 
 
 async def list_experiences(conn: asyncpg.Connection, profile_id: int) -> list[asyncpg.Record]:
@@ -60,28 +62,36 @@ async def add_experience(
 
 
 async def update_experience(
-    conn: asyncpg.Connection, profile_id: int, experience_id: int, data: ExperienceCreate
+    conn: asyncpg.Connection, profile_id: int, experience_id: int, data: ExperienceUpdate
 ) -> asyncpg.Record:
-    """Update an existing experience entry, verifying ownership."""
+    """Partially update an existing experience entry, verifying ownership."""
     await models.ensure_experience_schema(conn)
-    row = await conn.fetchrow(
-        "UPDATE experiences SET role_title=$1, company_name=$2, "
-        "start_month_year=$3, end_month_year=$4, context=$5, "
-        "work_sample_links=$6::jsonb, bullet_points=$7::jsonb, updated_at=NOW() "
-        "WHERE id=$8 AND profile_id=$9 "
-        "RETURNING id, profile_id, role_title, company_name, "
-        "start_month_year, end_month_year, context, work_sample_links, bullet_points, "
-        "created_at, updated_at",
-        data.role_title,
-        data.company_name,
-        data.start_month_year,
-        data.end_month_year,
-        data.context,
-        json.dumps(data.work_sample_links),
-        json.dumps(data.bullet_points),
-        experience_id,
-        profile_id,
+    updates = data.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    # Cross-validate dates when only one is provided
+    has_start = "start_month_year" in updates
+    has_end = "end_month_year" in updates
+    if has_start ^ has_end:
+        existing = await conn.fetchrow(
+            "SELECT start_month_year, end_month_year FROM experiences WHERE id=$1 AND profile_id=$2",
+            experience_id, profile_id
+        )
+        if existing:
+            start = updates.get("start_month_year") or existing["start_month_year"]
+            end = updates.get("end_month_year") or existing["end_month_year"]
+            if end and start:
+                if _parse_month_year(end) < _parse_month_year(start):
+                    raise HTTPException(status_code=422, detail="end_month_year must be >= start_month_year")
+
+    query, params = build_partial_update_query(
+        "experiences",
+        {"id": experience_id, "profile_id": profile_id},
+        updates,
+        jsonb_fields={"work_sample_links", "bullet_points"}
     )
+    row = await conn.fetchrow(query, *params)
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Experience entry not found")
     return row

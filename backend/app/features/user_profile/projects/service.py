@@ -3,8 +3,10 @@ import json
 import asyncpg
 from fastapi import HTTPException, status
 
+from app.features.core.query_helpers import build_partial_update_query
 from app.features.user_profile.projects import models
-from app.features.user_profile.projects.schemas import ProjectCreate
+from app.features.user_profile.projects.schemas import ProjectCreate, ProjectUpdate
+from app.features.user_profile.projects.schemas import _parse_month_year
 
 
 async def list_projects(conn: asyncpg.Connection, profile_id: int) -> list[asyncpg.Record]:
@@ -58,26 +60,36 @@ async def add_project(
 
 
 async def update_project(
-    conn: asyncpg.Connection, profile_id: int, project_id: int, data: ProjectCreate
+    conn: asyncpg.Connection, profile_id: int, project_id: int, data: ProjectUpdate
 ) -> asyncpg.Record:
-    """Update an existing project entry, verifying ownership."""
+    """Partially update an existing project entry, verifying ownership."""
     await models.ensure_projects_schema(conn)
-    row = await conn.fetchrow(
-        "UPDATE projects SET project_name=$1, description=$2, "
-        "start_month_year=$3, end_month_year=$4, reference_links=$5::jsonb, "
-        "updated_at=NOW() "
-        "WHERE id=$6 AND profile_id=$7 "
-        "RETURNING id, profile_id, project_name, description, "
-        "start_month_year, end_month_year, reference_links, "
-        "created_at, updated_at",
-        data.project_name,
-        data.description,
-        data.start_month_year,
-        data.end_month_year,
-        json.dumps(data.reference_links),
-        project_id,
-        profile_id,
+    updates = data.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    # Cross-validate dates when only one is provided
+    has_start = "start_month_year" in updates
+    has_end = "end_month_year" in updates
+    if has_start ^ has_end:
+        existing = await conn.fetchrow(
+            "SELECT start_month_year, end_month_year FROM projects WHERE id=$1 AND profile_id=$2",
+            project_id, profile_id
+        )
+        if existing:
+            start = updates.get("start_month_year") or existing["start_month_year"]
+            end = updates.get("end_month_year") or existing["end_month_year"]
+            if end and start:
+                if _parse_month_year(end) < _parse_month_year(start):
+                    raise HTTPException(status_code=422, detail="end_month_year must be >= start_month_year")
+
+    query, params = build_partial_update_query(
+        "projects",
+        {"id": project_id, "profile_id": profile_id},
+        updates,
+        jsonb_fields={"reference_links"}
     )
+    row = await conn.fetchrow(query, *params)
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project entry not found")
     return row

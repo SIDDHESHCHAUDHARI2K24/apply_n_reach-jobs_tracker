@@ -2,8 +2,9 @@
 import asyncpg
 from fastapi import HTTPException, status
 
+from app.features.core.query_helpers import build_partial_update_query
 from app.features.user_profile.certifications import models
-from app.features.user_profile.certifications.schemas import CertificationCreate
+from app.features.user_profile.certifications.schemas import CertificationCreate, CertificationUpdate
 
 
 async def list_certifications(conn: asyncpg.Connection, profile_id: int) -> list[asyncpg.Record]:
@@ -50,20 +51,20 @@ async def add_certification(
 
 
 async def update_certification(
-    conn: asyncpg.Connection, profile_id: int, certification_id: int, data: CertificationCreate
+    conn: asyncpg.Connection, profile_id: int, certification_id: int, data: CertificationUpdate
 ) -> asyncpg.Record:
-    """Update an existing certification entry, verifying ownership."""
+    """Partially update an existing certification entry, verifying ownership."""
     await models.ensure_certifications_schema(conn)
-    row = await conn.fetchrow(
-        "UPDATE certifications SET certification_name=$1, verification_link=$2, updated_at=NOW() "
-        "WHERE id=$3 AND profile_id=$4 "
-        "RETURNING id, profile_id, certification_name, verification_link, "
-        "created_at, updated_at",
-        data.certification_name,
-        data.verification_link,
-        certification_id,
-        profile_id,
+    updates = data.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    query, params = build_partial_update_query(
+        "certifications",
+        {"id": certification_id, "profile_id": profile_id},
+        updates,
     )
+    row = await conn.fetchrow(query, *params)
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Certification not found")
     return row

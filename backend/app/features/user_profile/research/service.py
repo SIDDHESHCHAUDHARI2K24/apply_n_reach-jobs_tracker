@@ -2,8 +2,9 @@
 import asyncpg
 from fastapi import HTTPException, status
 
+from app.features.core.query_helpers import build_partial_update_query
 from app.features.user_profile.research import models
-from app.features.user_profile.research.schemas import ResearchCreate
+from app.features.user_profile.research.schemas import ResearchCreate, ResearchUpdate
 
 
 async def list_researches(conn: asyncpg.Connection, profile_id: int) -> list[asyncpg.Record]:
@@ -51,22 +52,20 @@ async def add_research(
 
 
 async def update_research(
-    conn: asyncpg.Connection, profile_id: int, research_id: int, data: ResearchCreate
+    conn: asyncpg.Connection, profile_id: int, research_id: int, data: ResearchUpdate
 ) -> asyncpg.Record:
-    """Update an existing research entry, verifying ownership."""
+    """Partially update an existing research entry, verifying ownership."""
     await models.ensure_research_schema(conn)
-    row = await conn.fetchrow(
-        "UPDATE researches SET paper_name=$1, publication_link=$2, description=$3, "
-        "updated_at=NOW() "
-        "WHERE id=$4 AND profile_id=$5 "
-        "RETURNING id, profile_id, paper_name, publication_link, description, "
-        "created_at, updated_at",
-        data.paper_name,
-        data.publication_link,
-        data.description,
-        research_id,
-        profile_id,
+    updates = data.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    query, params = build_partial_update_query(
+        "researches",
+        {"id": research_id, "profile_id": profile_id},
+        updates,
     )
+    row = await conn.fetchrow(query, *params)
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Research entry not found")
     return row
