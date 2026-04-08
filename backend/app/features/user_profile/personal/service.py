@@ -67,12 +67,6 @@ async def update_personal_details(
     if "email" in updates and updates["email"] is not None:
         updates["email"] = str(updates["email"])
 
-    existing = await conn.fetchrow(
-        "SELECT id FROM personal_details WHERE profile_id=$1", profile_id
-    )
-    if existing is None:
-        raise HTTPException(status_code=404, detail="Personal details not found. Create them first.")
-
     query, params = build_partial_update_query(
         "personal_details",
         {"profile_id": profile_id},
@@ -80,7 +74,7 @@ async def update_personal_details(
     )
     row = await conn.fetchrow(query, *params)
     if row is None:
-        raise HTTPException(status_code=404, detail="Personal details not found")
+        raise HTTPException(status_code=404, detail="Personal details not found. Create them first.")
     return row
 
 
