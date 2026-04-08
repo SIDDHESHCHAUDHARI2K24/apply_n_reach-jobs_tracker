@@ -20,6 +20,14 @@ from app.features.user_profile.projects.router import router as projects_router
 from app.features.user_profile.research.router import router as research_router
 from app.features.user_profile.certifications.router import router as certifications_router
 from app.features.user_profile.skills.router import router as skills_router
+from app.features.job_profile.core.router import router as jp_core_router
+from app.features.job_profile.personal.router import router as jp_personal_router
+from app.features.job_profile.education.router import router as jp_education_router
+from app.features.job_profile.experience.router import router as jp_experience_router
+from app.features.job_profile.projects.router import router as jp_projects_router
+from app.features.job_profile.research.router import router as jp_research_router
+from app.features.job_profile.certifications.router import router as jp_certifications_router
+from app.features.job_profile.skills.router import router as jp_skills_router
 
 
 def create_app() -> FastAPI:
@@ -66,5 +74,15 @@ def create_app() -> FastAPI:
     app.include_router(research_router)
     app.include_router(certifications_router)
     app.include_router(skills_router)
+
+    # Job profile routers.
+    app.include_router(jp_core_router)
+    app.include_router(jp_personal_router)
+    app.include_router(jp_education_router)
+    app.include_router(jp_experience_router)
+    app.include_router(jp_projects_router)
+    app.include_router(jp_research_router)
+    app.include_router(jp_certifications_router)
+    app.include_router(jp_skills_router)
 
     return app
