@@ -4,20 +4,29 @@ llm.py
 Configurable LLM provider abstraction.
 
 All nodes import `chat()` from this module instead of calling
-the Anthropic SDK directly. Switching providers requires only
+any provider SDK directly. Switching providers requires only
 a change to the LLM_PROVIDER variable in your .env file.
 
 Supported providers:
-  anthropic  — Claude via Anthropic API (best quality, paid)
-  groq       — LLaMA / Mixtral via Groq API (free tier, very fast)
-  ollama     — Local models via Ollama (free, no internet needed)
+  anthropic   — Claude via Anthropic API (best quality, paid)
+  groq        — LLaMA / Mixtral via Groq API (free tier, very fast)
+  ollama      — Local models via Ollama (free, no internet needed)
+  openrouter  — 100+ models via OpenRouter (free and paid tiers,
+                single API key, OpenAI-compatible endpoint)
 
 .env variables:
-  LLM_PROVIDER=groq              # anthropic | groq | ollama
-  LLM_MODEL=llama-3.3-70b-versatile  # optional override
-  ANTHROPIC_API_KEY=...          # required if provider=anthropic
-  GROQ_API_KEY=...               # required if provider=groq
+  LLM_PROVIDER=openrouter                        # anthropic | groq | ollama | openrouter
+  LLM_MODEL=meta-llama/llama-3.3-70b-instruct   # optional model override
+  ANTHROPIC_API_KEY=...       # required if provider=anthropic
+  GROQ_API_KEY=...            # required if provider=groq
+  OPENROUTER_API_KEY=...      # required if provider=openrouter
   OLLAMA_BASE_URL=http://localhost:11434  # optional, ollama only
+
+Free models available on OpenRouter (set as LLM_MODEL):
+  meta-llama/llama-3.3-70b-instruct   — best free quality, strong instruction following
+  mistralai/mistral-7b-instruct       — fast, good for structured tasks
+  google/gemma-3-12b-it               — solid instruction following
+  anthropic/claude-3.5-sonnet         — best quality, paid
 
 Usage in any node:
   from llm import chat
@@ -41,9 +50,10 @@ import os
 PROVIDER = os.environ.get("LLM_PROVIDER", "anthropic").lower().strip()
 
 _DEFAULT_MODELS = {
-    "anthropic": "claude-3-5-sonnet-20241022",
-    "groq":      "llama-3.3-70b-versatile",
-    "ollama":    "llama3.2",
+    "anthropic":  "claude-3-5-sonnet-20241022",
+    "groq":       "llama-3.3-70b-versatile",
+    "ollama":     "llama3.2",
+    "openrouter": "meta-llama/llama-3.3-70b-instruct",
 }
 
 MODEL = os.environ.get("LLM_MODEL") or _DEFAULT_MODELS.get(PROVIDER, "llama3.2")
@@ -93,14 +103,37 @@ def _chat_ollama(system: str, user: str, max_tokens: int) -> str:
     return response["message"]["content"].strip()
 
 
+def _chat_openrouter(system: str, user: str, max_tokens: int) -> str:
+    """
+    OpenRouter uses the OpenAI-compatible endpoint.
+    Install: pip install openai
+    Get a free key at: openrouter.ai
+    """
+    from openai import OpenAI
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=os.environ.get("OPENROUTER_API_KEY"),
+    )
+    response = client.chat.completions.create(
+        model=MODEL,
+        max_tokens=max_tokens,
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user",   "content": user},
+        ],
+    )
+    return response.choices[0].message.content.strip()
+
+
 # ---------------------------------------------------------------------------
 # Dispatch table
 # ---------------------------------------------------------------------------
 
 _PROVIDERS = {
-    "anthropic": _chat_anthropic,
-    "groq":      _chat_groq,
-    "ollama":    _chat_ollama,
+    "anthropic":  _chat_anthropic,
+    "groq":       _chat_groq,
+    "ollama":     _chat_ollama,
+    "openrouter": _chat_openrouter,
 }
 
 
