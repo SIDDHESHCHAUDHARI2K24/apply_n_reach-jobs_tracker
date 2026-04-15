@@ -527,3 +527,35 @@ class TestSkillsSectionIsolation:
             )
             assert resp.status_code == 200
             assert all(sid in resp.json()["not_found"] for sid in skill_ids)
+
+
+# ---------------------------------------------------------------------------
+# LaTeX resume section isolation
+# ---------------------------------------------------------------------------
+
+class TestLatexResumeSectionIsolation:
+    def test_cross_user_render_404(self, dual_user_setup):
+        """User B cannot trigger render on User A's job profile."""
+        app, _, override_b, _, _, ids = dual_user_setup
+        app.dependency_overrides[get_current_user] = override_b
+        with TestClient(app) as client_b:
+            resp = client_b.post(
+                f"/job-profiles/{ids['jp_a_id']}/latex-resume/render"
+            )
+            assert resp.status_code == 404
+
+    def test_cross_user_metadata_404(self, dual_user_setup):
+        """User B cannot read render metadata for User A's job profile."""
+        app, _, override_b, _, _, ids = dual_user_setup
+        app.dependency_overrides[get_current_user] = override_b
+        with TestClient(app) as client_b:
+            resp = client_b.get(f"/job-profiles/{ids['jp_a_id']}/latex-resume")
+            assert resp.status_code == 404
+
+    def test_cross_user_pdf_404(self, dual_user_setup):
+        """User B cannot download PDF for User A's job profile."""
+        app, _, override_b, _, _, ids = dual_user_setup
+        app.dependency_overrides[get_current_user] = override_b
+        with TestClient(app) as client_b:
+            resp = client_b.get(f"/job-profiles/{ids['jp_a_id']}/latex-resume/pdf")
+            assert resp.status_code == 404
