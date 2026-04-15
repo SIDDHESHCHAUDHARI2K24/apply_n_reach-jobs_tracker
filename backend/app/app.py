@@ -28,6 +28,7 @@ from app.features.job_profile.projects.router import router as jp_projects_route
 from app.features.job_profile.research.router import router as jp_research_router
 from app.features.job_profile.certifications.router import router as jp_certifications_router
 from app.features.job_profile.skills.router import router as jp_skills_router
+from app.features.job_profile.latex_resume.router import router as jp_latex_resume_router
 
 
 def create_app() -> FastAPI:
@@ -84,5 +85,6 @@ def create_app() -> FastAPI:
     app.include_router(jp_research_router)
     app.include_router(jp_certifications_router)
     app.include_router(jp_skills_router)
+    app.include_router(jp_latex_resume_router)
 
     return app
