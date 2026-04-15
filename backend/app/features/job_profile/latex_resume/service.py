@@ -227,17 +227,10 @@ async def get_resume_pdf(
     if row is None:
         return None
 
-    full_name = row["full_name"] or ""
-    name_parts = full_name.strip().split()
-    first = name_parts[0] if name_parts else ""
-    last = name_parts[-1] if len(name_parts) >= 2 else ""
-    role = row["target_role"] or row["profile_name"] or ""
-
-    parts = [p for p in [first, last, role] if p]
-    stem = "_".join(parts).replace(" ", "_").lower()
-    stem = re.sub(r"[^\w\-]", "_", stem)
-    stem = re.sub(r"_+", "_", stem).strip("_") or "resume"
-
+    stem = _build_filename_stem({
+        "personal": {"full_name": row["full_name"]},
+        "job_meta": {"target_role": row["target_role"], "profile_name": row["profile_name"]},
+    })
     return row["pdf_content"], stem
 
 
