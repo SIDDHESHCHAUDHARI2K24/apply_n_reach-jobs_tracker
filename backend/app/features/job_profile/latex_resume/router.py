@@ -1,7 +1,6 @@
 """Router for job profile latex_resume endpoints."""
 import asyncpg
-from fastapi import APIRouter, Depends, Response
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.features.core.dependencies import DbDep
 from app.features.job_profile.dependencies import get_job_profile_or_404
@@ -35,7 +34,6 @@ async def get_resume_metadata(
     conn: asyncpg.Connection = DbDep,
 ) -> RenderedResumeResponse:
     """Get metadata for the last rendered resume. 404 if never rendered."""
-    from fastapi import HTTPException, status
     row = await service.get_rendered_resume(conn, job_profile["id"])
     if row is None:
         raise HTTPException(
@@ -51,7 +49,6 @@ async def get_resume_pdf(
     conn: asyncpg.Connection = DbDep,
 ) -> Response:
     """Download the rendered PDF. 404 if never rendered."""
-    from fastapi import HTTPException, status
     result = await service.get_resume_pdf(conn, job_profile["id"])
     if result is None:
         raise HTTPException(
