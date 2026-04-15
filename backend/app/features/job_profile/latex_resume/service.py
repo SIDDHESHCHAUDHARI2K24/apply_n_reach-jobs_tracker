@@ -3,6 +3,7 @@
 Orchestrates: aggregate job profile data → build LaTeX → render PDF → upsert row.
 """
 import json
+import re
 
 import asyncpg
 from fastapi import HTTPException, status
@@ -134,7 +135,6 @@ def _build_filename_stem(profile_data: dict) -> str:
     stem = "_".join(parts).replace(" ", "_").lower()
 
     # Keep only alphanumeric, underscore, hyphen
-    import re
     stem = re.sub(r"[^\w\-]", "_", stem)
     stem = re.sub(r"_+", "_", stem).strip("_")
 
@@ -233,7 +233,6 @@ async def get_resume_pdf(
     last = name_parts[-1] if len(name_parts) >= 2 else ""
     role = row["target_role"] or row["profile_name"] or ""
 
-    import re
     parts = [p for p in [first, last, role] if p]
     stem = "_".join(parts).replace(" ", "_").lower()
     stem = re.sub(r"[^\w\-]", "_", stem)
