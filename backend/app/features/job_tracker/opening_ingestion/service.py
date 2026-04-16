@@ -8,6 +8,7 @@ from fastapi import HTTPException
 
 from app.features.job_tracker.opening_ingestion.clients.apify_client import CrawlError, crawl_url
 from app.features.job_tracker.opening_ingestion.clients.extraction_chain import (
+    EXTRACTION_MODEL,
     ExtractionError,
     extract_job_details,
 )
@@ -122,7 +123,7 @@ async def _execute_run(conn, opening_id: int, run_id: int) -> None:
             extracted.posted_date,
             extracted.application_deadline,
             json.dumps(extracted.model_dump()),
-            extracted.extractor_model or "claude-haiku-4-5-20251001",
+            extracted.extractor_model or EXTRACTION_MODEL,
             extracted.source_url or opening["source_url"],
         )
 

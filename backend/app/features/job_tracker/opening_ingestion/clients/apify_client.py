@@ -37,7 +37,7 @@ async def crawl_url(url: str) -> str:
             response.raise_for_status()
             items = response.json()
             if not items:
-                raise CrawlError(f"No content returned for URL: {url}")
+                raise CrawlError("No content returned for the requested URL")
             return items[0].get("text", items[0].get("markdown", ""))
         except httpx.HTTPError as e:
             raise CrawlError(f"HTTP error crawling {url}: {e}") from e

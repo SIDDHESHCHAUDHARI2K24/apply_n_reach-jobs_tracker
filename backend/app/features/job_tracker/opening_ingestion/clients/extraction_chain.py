@@ -4,6 +4,8 @@ import json
 from app.features.job_tracker.schemas import ExtractedJobDetails
 from app.features.core.config import get_settings
 
+EXTRACTION_MODEL = "claude-haiku-4-5-20251001"
+
 
 class ExtractionError(Exception):
     pass
@@ -25,7 +27,7 @@ async def extract_job_details(raw_text: str) -> ExtractedJobDetails:
         from langchain_core.prompts import ChatPromptTemplate
 
         model = ChatAnthropic(
-            model="claude-haiku-4-5-20251001",
+            model=EXTRACTION_MODEL,
             api_key=api_key,
             temperature=0,
         ).with_structured_output(ExtractedJobDetails)

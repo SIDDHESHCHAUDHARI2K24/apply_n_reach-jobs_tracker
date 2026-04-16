@@ -11,7 +11,13 @@ from app.features.job_tracker.opening_resume.projects.schemas import (
 
 
 def _parse_technologies(row: asyncpg.Record) -> dict:
-    """Convert row to dict with technologies deserialized from JSONB string if needed."""
+    """Convert row to dict with technologies deserialized from JSONB string if needed.
+
+    asyncpg returns JSONB as a native Python list/dict on plain SELECT queries, so
+    the isinstance check is a no-op on list_entries / get_entry paths.  It is only
+    needed for INSERT / UPDATE RETURNING paths, where asyncpg delivers the JSONB
+    column back as a raw JSON string rather than a decoded Python object.
+    """
     d = dict(row)
     if isinstance(d.get("technologies"), str):
         d["technologies"] = json.loads(d["technologies"])
@@ -29,8 +35,10 @@ def _build_update_query(
     set_parts = []
     for col, val in updates.items():
         if col in jsonb_fields:
-            params.append(json.dumps(val))
-            set_parts.append(f"{col}=${len(params)}::jsonb")
+            # Pass json.dumps string without ::jsonb cast — asyncpg handles NULL natively
+            # and Postgres coerces non-null strings to jsonb via the column type.
+            params.append(json.dumps(val) if val is not None else None)
+            set_parts.append(f"{col}=${len(params)}")
         else:
             params.append(val)
             set_parts.append(f"{col}=${len(params)}")
@@ -87,12 +95,14 @@ async def create_entry(
     data: ProjectCreate,
 ) -> asyncpg.Record:
     resume_id = await _get_resume_id(conn, user_id, opening_id)
+    # Pass technologies as plain $7 — asyncpg handles NULL natively without a ::jsonb cast.
+    # When non-null, json.dumps produces a string that Postgres coerces to jsonb via the column type.
     technologies = json.dumps(data.technologies) if data.technologies is not None else None
     return await conn.fetchrow(
         """
         INSERT INTO job_opening_projects
             (resume_id, name, description, url, start_date, end_date, technologies, display_order)
-        VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *
         """,
         resume_id,
