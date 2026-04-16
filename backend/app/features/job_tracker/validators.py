@@ -28,8 +28,6 @@ def validate_url(url: str | None) -> str | None:
         raise ValueError(
             f"URL must use http or https scheme, got: {parsed.scheme!r}"
         )
-    if len(url) > _MAX_URL_LENGTH:
-        raise ValueError(
-            f"URL exceeds maximum length of {_MAX_URL_LENGTH} characters"
-        )
+    if not parsed.netloc:
+        raise ValueError("URL must include a valid host")
     return url

@@ -1,22 +1,24 @@
 """Pydantic schemas for the job_tracker feature."""
-from typing import Optional
-
 from app.features.core.base_model import BaseSchema
 
 
 class ExtractedJobDetails(BaseSchema):
-    """Schema representing structured job details extracted from a job posting."""
+    """Schema representing structured job details extracted from a job posting.
 
-    job_title: Optional[str] = None
-    company_name: Optional[str] = None
-    location: Optional[str] = None
-    employment_type: Optional[str] = None
-    salary_range: Optional[str] = None
-    description_summary: Optional[str] = None
-    required_skills: Optional[list[str]] = None
-    preferred_skills: Optional[list[str]] = None
-    experience_level: Optional[str] = None
-    posted_date: Optional[str] = None
-    application_deadline: Optional[str] = None
-    extractor_model: Optional[str] = None
-    source_url: Optional[str] = None
+    Fields are intentionally not sanitized — this schema is used internally by
+    the ingestion pipeline and all values are AI-generated, not raw user input.
+    """
+
+    job_title: str | None = None
+    company_name: str | None = None
+    location: str | None = None
+    employment_type: str | None = None
+    salary_range: str | None = None
+    description_summary: str | None = None
+    required_skills: list[str] | None = None
+    preferred_skills: list[str] | None = None
+    experience_level: str | None = None
+    posted_date: str | None = None
+    application_deadline: str | None = None
+    extractor_model: str | None = None
+    source_url: str | None = None
