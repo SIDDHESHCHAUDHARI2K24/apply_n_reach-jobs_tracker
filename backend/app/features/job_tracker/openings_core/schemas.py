@@ -1,6 +1,6 @@
 """Pydantic schemas for the job_tracker openings_core sub-feature."""
+from datetime import datetime
 from enum import Enum
-from typing import Any
 
 from pydantic import field_validator
 
@@ -123,5 +123,5 @@ class StatusHistoryEntry(BaseSchema):
     opening_id: int
     from_status: OpeningStatus | None
     to_status: OpeningStatus
-    changed_at: Any
+    changed_at: datetime
     changed_by_user_id: int

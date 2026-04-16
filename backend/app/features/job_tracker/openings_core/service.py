@@ -10,6 +10,15 @@ from app.features.job_tracker.openings_core.schemas import (
     OpeningUpdate,
 )
 
+# Single backslash used as the LIKE ESCAPE character in SQL.
+# Defined as a constant because backslash escaping in f-strings is non-trivial.
+_LIKE_ESCAPE = "\\"
+
+
+def _escape_like(value: str) -> str:
+    """Escape LIKE wildcards in a user-supplied search string."""
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
 TRANSITION_MATRIX: dict[OpeningStatus, set[OpeningStatus]] = {
     OpeningStatus.Interested: {
         OpeningStatus.Applied,
@@ -106,13 +115,12 @@ async def list_openings(
         conditions.append(f"current_status = ${len(args)}")
 
     if params.company_name is not None:
-        args.append(f"%{params.company_name}%")
-        conditions.append(f"company_name ILIKE ${len(args)}")
+        args.append(f"%{_escape_like(params.company_name)}%")
+        conditions.append(f"company_name ILIKE ${len(args)} ESCAPE '{_LIKE_ESCAPE}'")
 
     if params.role_name is not None:
-        args.append(f"%{params.role_name}%")
-        conditions.append(f"role_name ILIKE ${len(args)}")
-
+        args.append(f"%{_escape_like(params.role_name)}%")
+        conditions.append(f"role_name ILIKE ${len(args)} ESCAPE '{_LIKE_ESCAPE}'")
     if params.after_id is not None:
         args.append(params.after_id)
         conditions.append(f"id > ${len(args)}")

@@ -16,6 +16,8 @@ from app.features.job_tracker.openings_core.router import router as openings_rou
 def make_app():
     """Create a fresh app instance with the openings router registered."""
     app = create_app()
+    # NOTE: openings_router not yet registered in create_app() (done in Unit 5).
+    # If it is later registered, remove this override to avoid duplicate routes.
     app.include_router(openings_router)
     return app
 
