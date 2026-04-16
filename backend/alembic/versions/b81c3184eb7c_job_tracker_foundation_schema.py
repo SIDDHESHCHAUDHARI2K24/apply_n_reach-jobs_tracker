@@ -109,7 +109,7 @@ def upgrade() -> None:
         source_job_profile_id INTEGER REFERENCES job_profiles(id) ON DELETE SET NULL,
         snapshot_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         snapshot_version INTEGER NOT NULL DEFAULT 1,
-        source_section_count INTEGER NOT NULL DEFAULT 7
+        source_section_count INTEGER NOT NULL DEFAULT 7  -- 7 resume sections: personal, education, experience, projects, research, certifications, skills; set by service layer at snapshot time
     )
     """)
 

@@ -11,9 +11,18 @@ async def get_opening_or_404(
     current_user: asyncpg.Record = Depends(get_current_user),
     conn: asyncpg.Connection = DbDep,
 ) -> asyncpg.Record:
-    """Dependency: validates opening_id belongs to the authenticated user."""
+    """Dependency: validates opening_id belongs to the authenticated user.
+
+    Note: no ensure_*_schema() call here — job_tracker uses Alembic migrations
+    exclusively, not lazy schema creation.
+    """
     row = await conn.fetchrow(
-        "SELECT * FROM job_openings WHERE id = $1 AND user_id = $2",
+        """
+        SELECT id, user_id, job_profile_id, source_url, company_name,
+               role_name, current_status, notes, created_at, updated_at
+        FROM job_openings
+        WHERE id = $1 AND user_id = $2
+        """,
         opening_id, current_user["id"]
     )
     if row is None:
