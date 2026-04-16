@@ -43,10 +43,15 @@ async def create_opening_resume(
                 detail="Job profile not found",
             )
 
-        # Check no resume exists already
+        # Check no resume exists already (scoped to user for defense in depth)
         existing = await conn.fetchrow(
-            "SELECT id FROM job_opening_resumes WHERE opening_id=$1",
+            """
+            SELECT r.id FROM job_opening_resumes r
+            JOIN job_openings o ON o.id = r.opening_id
+            WHERE r.opening_id=$1 AND o.user_id=$2
+            """,
             opening_id,
+            user_id,
         )
         if existing:
             raise HTTPException(
