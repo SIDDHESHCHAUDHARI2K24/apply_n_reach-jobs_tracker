@@ -1,10 +1,100 @@
 import { useState, useEffect } from 'react'
+import { Download, AlertCircle, CheckCircle } from 'lucide-react'
 import { jobProfileApi } from '@features/job-profiles/jobProfileApi'
 import { HttpError } from '@core/http/client'
 
 interface Props {
   jobProfileId: string
   section: string
+}
+
+// Helper: render a styled summary of section data
+function SectionSummary({ section, data }: { section: string; data: unknown }) {
+  if (data === null || data === undefined) {
+    return <p className="text-sm text-slate-400">No data available.</p>
+  }
+
+  if (section === 'personal') {
+    const p = data as Record<string, unknown>
+    return (
+      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
+        {p.full_name && (
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Name</span>
+            <p className="text-sm text-slate-800">{String(p.full_name)}</p>
+          </div>
+        )}
+        {p.email && (
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</span>
+            <p className="text-sm text-slate-800">{String(p.email)}</p>
+          </div>
+        )}
+        {p.headline && (
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Headline</span>
+            <p className="text-sm text-slate-800">{String(p.headline)}</p>
+          </div>
+        )}
+        {!p.full_name && !p.email && !p.headline && (
+          <p className="text-sm text-slate-400">No personal details saved yet.</p>
+        )}
+      </div>
+    )
+  }
+
+  // Array sections
+  if (Array.isArray(data)) {
+    const items = data as Array<Record<string, unknown>>
+    const preview = items.slice(0, 3)
+    const labelKey = section === 'education'
+      ? 'degree'
+      : section === 'experience'
+      ? 'company'
+      : section === 'skills'
+      ? 'category'
+      : 'title'
+
+    return (
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
+          {items.length} item{items.length !== 1 ? 's' : ''}
+        </p>
+        {preview.length === 0 ? (
+          <p className="text-sm text-slate-400">No items yet. Import from your user profile to get started.</p>
+        ) : (
+          <div className="space-y-2">
+            {preview.map((item, idx) => {
+              const primary = String(item[labelKey] ?? item.title ?? item.name ?? 'Untitled')
+              const secondary = section === 'education'
+                ? item.institution
+                : section === 'experience'
+                ? item.role
+                : item.description ?? item.summary ?? item.proficiency ?? null
+              return (
+                <div key={idx} className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+                  <p className="text-sm font-medium text-slate-800">{primary}</p>
+                  {secondary && (
+                    <p className="text-xs text-slate-500 mt-0.5 truncate">{String(secondary)}</p>
+                  )}
+                </div>
+              )
+            })}
+            {items.length > 3 && (
+              <p className="text-xs text-slate-400">+ {items.length - 3} more item{items.length - 3 !== 1 ? 's' : ''}</p>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Fallback: object with unknown shape
+  return (
+    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+      <p className="text-sm text-slate-500">Data loaded. See raw data below.</p>
+    </div>
+  )
 }
 
 export function JPSectionContent({ jobProfileId, section }: Props) {
@@ -62,31 +152,64 @@ export function JPSectionContent({ jobProfileId, section }: Props) {
     }
   }
 
-  if (isLoading) return <div>Loading {section}...</div>
-  if (error) return <div role="alert" style={{ color: 'red' }}>{error} <button onClick={() => window.location.reload()}>Retry</button></div>
+  if (isLoading) return (
+    <div className="flex items-center gap-2 text-sm text-slate-400 py-8">
+      <span className="animate-spin">⟳</span>
+      Loading {section}...
+    </div>
+  )
+
+  if (error) return (
+    <div role="alert" className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+      <AlertCircle size={16} className="shrink-0 mt-0.5" />
+      <div className="flex-1">
+        <p>{error}</p>
+      </div>
+      <button
+        onClick={() => window.location.reload()}
+        className="text-red-600 hover:text-red-800 font-medium underline text-xs"
+      >
+        Retry
+      </button>
+    </div>
+  )
 
   const hasImport = ['education', 'experience', 'projects', 'research', 'certifications', 'skills'].includes(section)
 
   return (
-    <div>
+    <div className="space-y-4">
+      {/* Import bar */}
       {hasImport && (
-        <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <button onClick={importSection} disabled={isImporting}>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={importSection}
+            disabled={isImporting}
+            className="flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            <Download size={15} />
             {isImporting ? 'Importing...' : `Import ${section} from User Profile`}
           </button>
           {importResult && (
-            <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-              Imported: {importResult.imported_count}, Skipped: {importResult.skipped_count}
+            <span className="flex items-center gap-1.5 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+              <CheckCircle size={13} />
+              Imported {importResult.imported_count}, skipped {importResult.skipped_count}
             </span>
           )}
         </div>
       )}
-      <pre style={{ fontSize: '0.75rem', background: '#f9fafb', padding: '1rem', borderRadius: 4, overflow: 'auto', maxHeight: 400 }}>
-        {JSON.stringify(data, null, 2)}
-      </pre>
-      <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>
-        Full section editors available in future release.
-      </p>
+
+      {/* Styled summary */}
+      <SectionSummary section={section} data={data} />
+
+      {/* Raw data collapsible */}
+      <details className="text-xs">
+        <summary className="cursor-pointer text-slate-400 hover:text-slate-600 select-none py-1">Raw data</summary>
+        <pre className="mt-2 bg-slate-50 border border-slate-200 text-slate-600 p-4 rounded-lg overflow-auto max-h-64">
+          {JSON.stringify(data, null, 2)}
+        </pre>
+      </details>
+
+      <p className="text-xs text-slate-400">Full section editors available in future release.</p>
     </div>
   )
 }

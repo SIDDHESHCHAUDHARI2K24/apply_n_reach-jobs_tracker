@@ -87,3 +87,14 @@ p {
 .badge-offer { background: #d1fae5; color: #065f46; }
 .badge-rejected { background: #fee2e2; color: #991b1b; }
 .badge-withdrawn { background: #f4f4f5; color: #52525b; }
+
+/* Job profile status badges */
+.badge-draft { background: #f1f5f9; color: #64748b; }
+.badge-active { background: #d1fae5; color: #065f46; }
+.badge-archived { background: #f4f4f5; color: #52525b; }
+
+/* Render status badges */
+.badge-completed { background: #d1fae5; color: #065f46; }
+.badge-processing { background: #fef3c7; color: #92400e; }
+.badge-pending { background: #fef3c7; color: #92400e; }
+.badge-failed { background: #fee2e2; color: #991b1b; }
