@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Clock, FileText, Pencil, Trash2 } from 'lucide-react'
 import { useJobOpenings } from './useJobOpenings'
 import { StatusHistoryDrawer } from './StatusHistoryDrawer'
 import type { OpeningStatus, JobOpening } from '@features/job-tracker/types'
 
 const STATUS_OPTIONS: OpeningStatus[] = ['discovered', 'applied', 'phone_screen', 'interview', 'offer', 'rejected', 'withdrawn']
+
+const inputCls = 'px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none'
 
 export function JobTrackerTable() {
   const { openings, isLoading, isSaving, error, hasMore, setFilters, loadMore, create, update, remove, transitionStatus } = useJobOpenings()
@@ -48,83 +51,221 @@ export function JobTrackerTable() {
   }
 
   return (
-    <div>
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <input placeholder="Company" value={filterForm.company} onChange={e => setFilterForm(f => ({ ...f, company: e.target.value }))} />
-        <input placeholder="Role" value={filterForm.role} onChange={e => setFilterForm(f => ({ ...f, role: e.target.value }))} />
-        <select value={filterForm.status} onChange={e => setFilterForm(f => ({ ...f, status: e.target.value as OpeningStatus | '' }))}>
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+      {/* Filter bar */}
+      <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center gap-2">
+        <input
+          className={inputCls}
+          placeholder="Company"
+          value={filterForm.company}
+          onChange={e => setFilterForm(f => ({ ...f, company: e.target.value }))}
+        />
+        <input
+          className={inputCls}
+          placeholder="Role"
+          value={filterForm.role}
+          onChange={e => setFilterForm(f => ({ ...f, role: e.target.value }))}
+        />
+        <select
+          className={inputCls}
+          value={filterForm.status}
+          onChange={e => setFilterForm(f => ({ ...f, status: e.target.value as OpeningStatus | '' }))}
+        >
           <option value="">All statuses</option>
           {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        <button onClick={applyFilters}>Filter</button>
-        <button onClick={() => { setFilterForm({ company: '', role: '', status: '' }); setFilters({}) }}>Clear</button>
-        <button onClick={() => setShowCreate(s => !s)} style={{ marginLeft: 'auto' }}>+ Add Opening</button>
+        <button
+          onClick={applyFilters}
+          className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          Filter
+        </button>
+        <button
+          onClick={() => { setFilterForm({ company: '', role: '', status: '' }); setFilters({}) }}
+          className="px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg transition-colors"
+        >
+          Clear
+        </button>
+        <button
+          onClick={() => setShowCreate(s => !s)}
+          className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium rounded-lg transition-colors ml-auto"
+        >
+          + Add Opening
+        </button>
       </div>
 
       {/* Create form */}
       {showCreate && (
-        <form onSubmit={handleCreate} style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <input required placeholder="Company" value={createForm.company} onChange={e => setCreateForm(f => ({ ...f, company: e.target.value }))} />
-          <input required placeholder="Role" value={createForm.role} onChange={e => setCreateForm(f => ({ ...f, role: e.target.value }))} />
-          <input placeholder="URL (optional)" value={createForm.url} onChange={e => setCreateForm(f => ({ ...f, url: e.target.value }))} />
-          <button type="submit" disabled={isSaving}>Add</button>
-          <button type="button" onClick={() => setShowCreate(false)}>Cancel</button>
-        </form>
+        <div className="px-5 py-4 bg-sky-50 border-b border-sky-100">
+          <form onSubmit={handleCreate} className="flex flex-wrap gap-2 items-center">
+            <input
+              required
+              className={inputCls}
+              placeholder="Company"
+              value={createForm.company}
+              onChange={e => setCreateForm(f => ({ ...f, company: e.target.value }))}
+            />
+            <input
+              required
+              className={inputCls}
+              placeholder="Role"
+              value={createForm.role}
+              onChange={e => setCreateForm(f => ({ ...f, role: e.target.value }))}
+            />
+            <input
+              className={inputCls}
+              placeholder="URL (optional)"
+              value={createForm.url}
+              onChange={e => setCreateForm(f => ({ ...f, url: e.target.value }))}
+            />
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-4 py-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCreate(false)}
+              className="px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </form>
+        </div>
       )}
 
-      {error && <div role="alert" style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>}
-      {isLoading && openings.length === 0 && <div>Loading...</div>}
+      {error && (
+        <div role="alert" className="mx-5 mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {error}
+        </div>
+      )}
+      {isLoading && openings.length === 0 && (
+        <div className="px-5 py-8 text-center text-slate-500 text-sm">Loading...</div>
+      )}
 
       {/* Table */}
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
           <thead>
-            <tr>
+            <tr style={{ background: '#f8fafc' }}>
               {['Company', 'Role', 'Status', 'URL', 'Added', 'Updated', 'Actions'].map(h => (
-                <th key={h} style={{ textAlign: 'left', padding: '0.5rem', borderBottom: '2px solid #e5e7eb' }}>{h}</th>
+                <th
+                  key={h}
+                  className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-200"
+                >
+                  {h}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {openings.map(opening => (
               <>
-                <tr key={opening.id}>
-                  <td style={{ padding: '0.5rem' }}>{opening.company}</td>
-                  <td style={{ padding: '0.5rem' }}>{opening.role}</td>
-                  <td style={{ padding: '0.5rem' }}>
-                    <select value={opening.status} onChange={e => handleStatusChange(opening, e.target.value as OpeningStatus)} disabled={isSaving}>
+                <tr key={opening.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-4 py-3 text-sm font-medium text-slate-800">{opening.company}</td>
+                  <td className="px-4 py-3 text-sm text-slate-700">{opening.role}</td>
+                  <td className="px-4 py-3">
+                    <select
+                      className="text-xs border border-slate-200 rounded-md px-2 py-1 bg-white focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                      value={opening.status}
+                      onChange={e => handleStatusChange(opening, e.target.value as OpeningStatus)}
+                      disabled={isSaving}
+                    >
                       {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </td>
-                  <td style={{ padding: '0.5rem' }}>
-                    {opening.url ? <a href={opening.url} target="_blank" rel="noreferrer noopener">Link</a> : '—'}
+                  <td className="px-4 py-3 text-sm">
+                    {opening.url ? (
+                      <a
+                        href={opening.url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="text-sky-500 hover:text-sky-600 font-medium"
+                      >
+                        ↗ Link
+                      </a>
+                    ) : '—'}
                   </td>
-                  <td style={{ padding: '0.5rem', fontSize: '0.875rem' }}>{new Date(opening.created_at).toLocaleDateString()}</td>
-                  <td style={{ padding: '0.5rem', fontSize: '0.875rem' }}>{new Date(opening.updated_at).toLocaleDateString()}</td>
-                  <td style={{ padding: '0.5rem' }}>
-                    <button onClick={() => setHistoryOpeningId(opening.id)}>History</button>
-                    {' '}
-                    <Link to={`/job-openings/${opening.id}/resume`}>Resume</Link>
-                    {' '}
-                    <button onClick={() => { setEditingId(opening.id); setEditForm({ company: opening.company, role: opening.role, url: opening.url ?? '' }) }}>Edit</button>
-                    {' '}
-                    <button onClick={() => {
-                      if (window.confirm(`Delete opening at ${opening.company}?`)) {
-                        remove(opening.id).catch(() => {})
-                      }
-                    }} disabled={isSaving}>Delete</button>
+                  <td className="px-4 py-3 text-sm text-slate-500">{new Date(opening.created_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-sm text-slate-500">{new Date(opening.updated_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      <button
+                        title="Status History"
+                        onClick={() => setHistoryOpeningId(opening.id)}
+                        className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                      >
+                        <Clock className="w-4 h-4" />
+                      </button>
+                      <Link
+                        to={`/job-openings/${opening.id}/resume`}
+                        title="Resume"
+                        className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </Link>
+                      <button
+                        title="Edit"
+                        onClick={() => { setEditingId(opening.id); setEditForm({ company: opening.company, role: opening.role, url: opening.url ?? '' }) }}
+                        className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        title="Delete"
+                        onClick={() => {
+                          if (window.confirm(`Delete opening at ${opening.company}?`)) {
+                            remove(opening.id).catch(() => {})
+                          }
+                        }}
+                        disabled={isSaving}
+                        className="p-1.5 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 {editingId === opening.id && (
                   <tr key={`${opening.id}-edit`}>
-                    <td colSpan={7} style={{ padding: '0.5rem', background: '#f9fafb' }}>
-                      <form onSubmit={e => handleUpdate(opening.id, e)} style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <input value={editForm.company} onChange={e => setEditForm(f => ({ ...f, company: e.target.value }))} placeholder="Company" required />
-                        <input value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))} placeholder="Role" required />
-                        <input value={editForm.url} onChange={e => setEditForm(f => ({ ...f, url: e.target.value }))} placeholder="URL" />
-                        <button type="submit" disabled={isSaving}>Save</button>
-                        <button type="button" onClick={() => setEditingId(null)}>Cancel</button>
+                    <td colSpan={7} className="px-4 py-3 bg-sky-50 border-y border-sky-100">
+                      <form onSubmit={e => handleUpdate(opening.id, e)} className="flex flex-wrap gap-2 items-center">
+                        <input
+                          className={inputCls}
+                          value={editForm.company}
+                          onChange={e => setEditForm(f => ({ ...f, company: e.target.value }))}
+                          placeholder="Company"
+                          required
+                        />
+                        <input
+                          className={inputCls}
+                          value={editForm.role}
+                          onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
+                          placeholder="Role"
+                          required
+                        />
+                        <input
+                          className={inputCls}
+                          value={editForm.url}
+                          onChange={e => setEditForm(f => ({ ...f, url: e.target.value }))}
+                          placeholder="URL"
+                        />
+                        <button
+                          type="submit"
+                          disabled={isSaving}
+                          className="px-4 py-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          className="px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg transition-colors"
+                        >
+                          Cancel
+                        </button>
                       </form>
                     </td>
                   </tr>
@@ -135,7 +276,17 @@ export function JobTrackerTable() {
         </table>
       </div>
 
-      {hasMore && <button onClick={loadMore} disabled={isLoading} style={{ marginTop: '1rem' }}>Load more</button>}
+      {hasMore && (
+        <div className="px-5 py-4 border-t border-slate-100">
+          <button
+            onClick={loadMore}
+            disabled={isLoading}
+            className="px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-700 text-sm font-medium rounded-lg transition-colors"
+          >
+            Load more
+          </button>
+        </div>
+      )}
 
       {historyOpeningId && (
         <StatusHistoryDrawer openingId={historyOpeningId} onClose={() => setHistoryOpeningId(null)} />
