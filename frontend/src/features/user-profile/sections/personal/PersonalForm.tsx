@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { usePersonal } from './usePersonal'
 import type { PersonalDetails } from '@features/user-profile/types'
-import { Linkedin, Github, Globe, AlertCircle } from 'lucide-react'
+import { Link2, Globe, AlertCircle } from 'lucide-react'
 
 type EditableFields = Omit<PersonalDetails, 'id' | 'profile_id' | 'created_at' | 'updated_at'>
 
@@ -126,7 +126,7 @@ export function PersonalForm() {
         <div className="space-y-1">
           <label className="block text-sm font-medium text-slate-700">LinkedIn URL</label>
           <div className="relative">
-            <Linkedin className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <Link2 className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <input
               name="linkedin_url"
               value={form.linkedin_url ?? ''}
@@ -139,7 +139,7 @@ export function PersonalForm() {
         <div className="space-y-1">
           <label className="block text-sm font-medium text-slate-700">GitHub URL</label>
           <div className="relative">
-            <Github className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <Link2 className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <input
               name="github_url"
               value={form.github_url ?? ''}

@@ -18,19 +18,19 @@ function SectionSummary({ section, data }: { section: string; data: unknown }) {
     const p = data as Record<string, unknown>
     return (
       <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
-        {p.full_name && (
+        {!!p.full_name && (
           <div>
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Name</span>
             <p className="text-sm text-slate-800">{String(p.full_name)}</p>
           </div>
         )}
-        {p.email && (
+        {!!p.email && (
           <div>
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</span>
             <p className="text-sm text-slate-800">{String(p.email)}</p>
           </div>
         )}
-        {p.headline && (
+        {!!p.headline && (
           <div>
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Headline</span>
             <p className="text-sm text-slate-800">{String(p.headline)}</p>
@@ -66,16 +66,17 @@ function SectionSummary({ section, data }: { section: string; data: unknown }) {
           <div className="space-y-2">
             {preview.map((item, idx) => {
               const primary = String(item[labelKey] ?? item.title ?? item.name ?? 'Untitled')
-              const secondary = section === 'education'
+              const secondaryRaw = section === 'education'
                 ? item.institution
                 : section === 'experience'
                 ? item.role
                 : item.description ?? item.summary ?? item.proficiency ?? null
+              const secondary = secondaryRaw != null ? String(secondaryRaw) : null
               return (
                 <div key={idx} className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
                   <p className="text-sm font-medium text-slate-800">{primary}</p>
                   {secondary && (
-                    <p className="text-xs text-slate-500 mt-0.5 truncate">{String(secondary)}</p>
+                    <p className="text-xs text-slate-500 mt-0.5 truncate">{secondary}</p>
                   )}
                 </div>
               )
