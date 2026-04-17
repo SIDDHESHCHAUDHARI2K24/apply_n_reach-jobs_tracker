@@ -1,5 +1,9 @@
 import { EducationList } from '@features/user-profile/sections/education/EducationList'
 
 export default function EducationPage() {
-  return <EducationList />
+  return (
+    <div className="max-w-2xl">
+      <EducationList />
+    </div>
+  )
 }

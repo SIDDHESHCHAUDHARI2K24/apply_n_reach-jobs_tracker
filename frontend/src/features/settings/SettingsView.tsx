@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { User, LogOut } from 'lucide-react'
 import { apiRequest } from '@core/http/client'
 import { useAuth } from '@core/auth/context'
 
@@ -20,29 +21,46 @@ export function SettingsView() {
   }, [navigate, clearUser])
 
   return (
-    <div style={{ maxWidth: 480 }}>
-      <h1>Settings</h1>
+    <div className="max-w-xl space-y-6">
+      <h1 className="font-sora text-2xl font-bold text-slate-800">Settings</h1>
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2>Account</h2>
-        {user && (
-          <dl style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.5rem 1rem' }}>
-            <dt>Email</dt>
-            <dd>{user.email}</dd>
-            <dt>Member since</dt>
-            <dd>{new Date(user.created_at).toLocaleDateString()}</dd>
-            <dt>User ID</dt>
-            <dd style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>{user.id}</dd>
-          </dl>
-        )}
-      </section>
+      {/* Account card */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2.5 px-5 py-4 border-b border-slate-100">
+          <User size={16} className="text-slate-500" />
+          <h2 className="font-sora text-sm font-semibold text-slate-700">Account</h2>
+        </div>
+        <div className="px-5 py-4">
+          {user && (
+            <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2.5 text-sm">
+              <dt className="text-slate-500 font-medium">Email</dt>
+              <dd className="text-slate-800">{user.email}</dd>
+              <dt className="text-slate-500 font-medium">Member since</dt>
+              <dd className="text-slate-800">{new Date(user.created_at).toLocaleDateString()}</dd>
+              <dt className="text-slate-500 font-medium">User ID</dt>
+              <dd className="text-slate-600 font-mono text-xs break-all">{user.id}</dd>
+            </dl>
+          )}
+        </div>
+      </div>
 
-      <section>
-        <h2>Session</h2>
-        <button onClick={logout} disabled={isLoggingOut} style={{ background: '#dc2626', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: 4, cursor: 'pointer' }}>
-          {isLoggingOut ? 'Signing out...' : 'Sign out'}
-        </button>
-      </section>
+      {/* Session card */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2.5 px-5 py-4 border-b border-slate-100">
+          <LogOut size={16} className="text-slate-500" />
+          <h2 className="font-sora text-sm font-semibold text-slate-700">Session</h2>
+        </div>
+        <div className="px-5 py-4">
+          <button
+            onClick={logout}
+            disabled={isLoggingOut}
+            className="flex items-center justify-center gap-2 w-full bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50 text-sm"
+          >
+            <LogOut size={15} />
+            {isLoggingOut ? 'Signing out...' : 'Sign out'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
