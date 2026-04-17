@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Globe } from 'lucide-react'
 import type { Research } from '@features/user-profile/types'
 
 type FormFields = {
@@ -57,43 +58,130 @@ export function ResearchForm({ initial, isSaving, onSave, onCancel }: Props) {
     await onSave(fromForm(form))
   }
 
+  const fieldClass = 'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent'
+  const labelClass = 'block text-sm font-medium text-slate-700'
+
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '500px' }}>
-      <label>
-        Title *
-        <input name="title" value={form.title} onChange={handleChange} required style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Institution
-        <input name="institution" value={form.institution} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Journal
-        <input name="journal" value={form.journal} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Year
-        <input name="year" value={form.year} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Description
-        <textarea name="description" value={form.description} onChange={handleChange} rows={3} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        URL
-        <input name="url" value={form.url} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Bullet Points (one per line)
-        <textarea name="bullet_points" value={form.bullet_points} onChange={handleChange} rows={4} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Reference Links (one per line)
-        <textarea name="reference_links" value={form.reference_links} onChange={handleChange} rows={3} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <button type="submit" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save'}</button>
-        <button type="button" onClick={onCancel}>Cancel</button>
+    <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+      {/* Title */}
+      <div className="space-y-1">
+        <label className={labelClass}>Title <span className="text-red-500">*</span></label>
+        <input
+          name="title"
+          value={form.title}
+          onChange={handleChange}
+          required
+          placeholder="e.g. Deep Learning for Medical Imaging"
+          className={fieldClass}
+        />
+      </div>
+
+      {/* Institution + Journal */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label className={labelClass}>Institution</label>
+          <input
+            name="institution"
+            value={form.institution}
+            onChange={handleChange}
+            placeholder="e.g. MIT"
+            className={fieldClass}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className={labelClass}>Journal / Conference</label>
+          <input
+            name="journal"
+            value={form.journal}
+            onChange={handleChange}
+            placeholder="e.g. Nature Machine Intelligence"
+            className={fieldClass}
+          />
+        </div>
+      </div>
+
+      {/* Year */}
+      <div className="space-y-1" style={{ maxWidth: '160px' }}>
+        <label className={labelClass}>Year</label>
+        <input
+          name="year"
+          value={form.year}
+          onChange={handleChange}
+          placeholder="e.g. 2024"
+          className={fieldClass}
+        />
+      </div>
+
+      {/* Description */}
+      <div className="space-y-1">
+        <label className={labelClass}>Description</label>
+        <textarea
+          name="description"
+          value={form.description}
+          onChange={handleChange}
+          rows={3}
+          placeholder="Summary of the research..."
+          className={fieldClass}
+        />
+      </div>
+
+      {/* URL */}
+      <div className="space-y-1">
+        <label className={labelClass}>URL</label>
+        <div className="relative">
+          <Globe size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            name="url"
+            value={form.url}
+            onChange={handleChange}
+            placeholder="https://doi.org/..."
+            className={`${fieldClass} pl-9`}
+          />
+        </div>
+      </div>
+
+      {/* Bullet Points */}
+      <div className="space-y-1">
+        <label className={labelClass}>Key Points <span className="text-xs font-normal text-slate-400">(one per line)</span></label>
+        <textarea
+          name="bullet_points"
+          value={form.bullet_points}
+          onChange={handleChange}
+          rows={4}
+          placeholder={"Achieved state-of-the-art accuracy\nPublished in peer-reviewed journal"}
+          className={fieldClass}
+        />
+      </div>
+
+      {/* Reference Links */}
+      <div className="space-y-1">
+        <label className={labelClass}>Reference Links <span className="text-xs font-normal text-slate-400">(one per line)</span></label>
+        <textarea
+          name="reference_links"
+          value={form.reference_links}
+          onChange={handleChange}
+          rows={3}
+          placeholder={"https://arxiv.org/...\nhttps://github.com/..."}
+          className={fieldClass}
+        />
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-3 pt-1">
+        <button
+          type="submit"
+          disabled={isSaving}
+          className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors disabled:opacity-50 text-sm"
+        >
+          {isSaving ? 'Saving...' : 'Save'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-lg transition-colors text-sm"
+        >
+          Cancel
+        </button>
       </div>
     </form>
   )
