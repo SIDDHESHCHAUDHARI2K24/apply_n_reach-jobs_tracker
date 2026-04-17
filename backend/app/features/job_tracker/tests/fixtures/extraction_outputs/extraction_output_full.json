@@ -1,0 +1,15 @@
+{
+  "job_title": "Senior Software Engineer",
+  "company_name": "Acme Corp",
+  "location": "San Francisco, CA",
+  "employment_type": "Full-time",
+  "salary_range": "$150,000 – $200,000 per year",
+  "description_summary": "Design, build and maintain scalable backend services for a growing team.",
+  "required_skills": ["Python", "PostgreSQL", "REST API design", "Docker"],
+  "preferred_skills": ["FastAPI", "Kubernetes", "AWS"],
+  "experience_level": "Senior",
+  "posted_date": "2026-04-01",
+  "application_deadline": "2026-05-01",
+  "extractor_model": "gpt-4o",
+  "source_url": "https://jobs.example.com/senior-swe"
+}
