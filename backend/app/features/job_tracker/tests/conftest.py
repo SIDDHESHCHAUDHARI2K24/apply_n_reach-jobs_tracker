@@ -81,7 +81,7 @@ def _user_b_data():
     return asyncio.run(_create_user_only("test-jt-isolation-b"))
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def user_a_client(_user_a_data):
     """TestClient authenticated as user A, using its own dedicated app instance."""
     user_data, _ = _user_a_data
@@ -111,7 +111,7 @@ def user_b_client(_user_b_data):
     app.dependency_overrides.clear()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def opening_a(user_a_client):
     """A job opening created by user A."""
     resp = user_a_client.post(
@@ -125,14 +125,14 @@ def opening_a(user_a_client):
     return resp.json()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def profile_a(_user_a_data):
     """The job_profile owned by user A."""
     _, profile_data = _user_a_data
     return profile_data
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def resume_a(user_a_client, opening_a, profile_a):
     """Opening resume created for opening_a from profile_a, owned by user A."""
     resp = user_a_client.post(
