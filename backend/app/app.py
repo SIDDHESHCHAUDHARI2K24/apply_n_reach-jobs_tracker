@@ -6,6 +6,7 @@ The `core` feature provides infrastructure only and is consumed
 via dependencies, not as a public router.
 """
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -44,12 +45,17 @@ from app.features.job_tracker.opening_resume.research.router import router as jt
 from app.features.job_tracker.opening_resume.certifications.router import router as jt_resume_certifications_router
 from app.features.job_tracker.opening_resume.skills.router import router as jt_resume_skills_router
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Run startup tasks before serving requests."""
-    async with get_db() as conn:
-        await startup_stale_run_cleanup(conn)
+    try:
+        async with get_db() as conn:
+            await startup_stale_run_cleanup(conn)
+    except Exception:
+        logger.warning("Startup stale run cleanup failed; continuing startup", exc_info=True)
     yield
 
 
