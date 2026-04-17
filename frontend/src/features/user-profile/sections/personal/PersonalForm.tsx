@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { usePersonal } from './usePersonal'
 import type { PersonalDetails } from '@features/user-profile/types'
+import { Linkedin, Github, Globe, AlertCircle } from 'lucide-react'
 
 type EditableFields = Omit<PersonalDetails, 'id' | 'profile_id' | 'created_at' | 'updated_at'>
 
@@ -38,6 +39,13 @@ export function PersonalForm() {
     setForm(toForm(data))
   }, [data])
 
+  useEffect(() => {
+    if (success) {
+      const t = setTimeout(() => setSuccess(false), 2000)
+      return () => clearTimeout(t)
+    }
+  }, [success])
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }))
     setSuccess(false)
@@ -59,50 +67,126 @@ export function PersonalForm() {
     }
   }
 
-  if (isLoading) return <div>Loading...</div>
+  if (isLoading) return (
+    <div className="text-sm text-slate-500 py-8">Loading...</div>
+  )
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: '600px' }}>
-      <h2>Personal Details</h2>
-      {error && <div role="alert" style={{ color: 'red' }}>{error}</div>}
-      {success && <div style={{ color: 'green' }}>Saved successfully.</div>}
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <h2 className="font-['Sora'] text-xl font-semibold text-slate-800">Personal Details</h2>
 
-      <label>
-        Full Name
-        <input name="full_name" value={form.full_name ?? ''} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Email
-        <input name="email" type="email" value={form.email ?? ''} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Phone
-        <input name="phone" value={form.phone ?? ''} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Location
-        <input name="location" value={form.location ?? ''} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        LinkedIn URL
-        <input name="linkedin_url" value={form.linkedin_url ?? ''} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        GitHub URL
-        <input name="github_url" value={form.github_url ?? ''} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Portfolio URL
-        <input name="portfolio_url" value={form.portfolio_url ?? ''} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Summary
-        <textarea name="summary" value={form.summary ?? ''} onChange={handleChange} rows={4} style={{ display: 'block', width: '100%' }} />
-      </label>
+      {error && (
+        <div role="alert" className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {error}
+        </div>
+      )}
 
-      <button type="submit" disabled={isSaving}>
-        {isSaving ? 'Saving...' : 'Save'}
-      </button>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-slate-700">Full Name</label>
+          <input
+            name="full_name"
+            value={form.full_name ?? ''}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-slate-700">Email</label>
+          <input
+            name="email"
+            type="email"
+            value={form.email ?? ''}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-slate-700">Phone</label>
+          <input
+            name="phone"
+            value={form.phone ?? ''}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-slate-700">Location</label>
+          <input
+            name="location"
+            value={form.location ?? ''}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-slate-700">LinkedIn URL</label>
+          <div className="relative">
+            <Linkedin className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <input
+              name="linkedin_url"
+              value={form.linkedin_url ?? ''}
+              onChange={handleChange}
+              className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+              placeholder="https://linkedin.com/in/yourprofile"
+            />
+          </div>
+        </div>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-slate-700">GitHub URL</label>
+          <div className="relative">
+            <Github className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <input
+              name="github_url"
+              value={form.github_url ?? ''}
+              onChange={handleChange}
+              className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+              placeholder="https://github.com/yourusername"
+            />
+          </div>
+        </div>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-slate-700">Portfolio URL</label>
+          <div className="relative">
+            <Globe className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <input
+              name="portfolio_url"
+              value={form.portfolio_url ?? ''}
+              onChange={handleChange}
+              className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+              placeholder="https://yourportfolio.com"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-slate-700">Summary</label>
+        <textarea
+          name="summary"
+          value={form.summary ?? ''}
+          onChange={handleChange}
+          rows={4}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent resize-none"
+        />
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={isSaving}
+          className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors disabled:opacity-50 text-sm"
+        >
+          {isSaving ? 'Saving...' : 'Save'}
+        </button>
+        {success && (
+          <span className="text-green-600 text-sm font-medium">&#10003; Saved</span>
+        )}
+      </div>
     </form>
   )
 }
