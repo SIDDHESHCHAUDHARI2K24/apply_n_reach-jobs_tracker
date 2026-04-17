@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Globe } from 'lucide-react'
 import type { Certification } from '@features/user-profile/types'
 
 type FormFields = {
@@ -51,35 +52,103 @@ export function CertForm({ initial, isSaving, onSave, onCancel }: Props) {
     await onSave(fromForm(form))
   }
 
+  const fieldClass = 'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent'
+  const labelClass = 'block text-sm font-medium text-slate-700'
+
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '500px' }}>
-      <label>
-        Name *
-        <input name="name" value={form.name} onChange={handleChange} required style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Issuing Organization
-        <input name="issuing_organization" value={form.issuing_organization} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Issue Date
-        <input name="issue_date" value={form.issue_date} onChange={handleChange} placeholder="YYYY-MM-DD" style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Expiry Date
-        <input name="expiry_date" value={form.expiry_date} onChange={handleChange} placeholder="YYYY-MM-DD" style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Credential ID
-        <input name="credential_id" value={form.credential_id} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <label>
-        Credential URL
-        <input name="credential_url" value={form.credential_url} onChange={handleChange} style={{ display: 'block', width: '100%' }} />
-      </label>
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <button type="submit" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save'}</button>
-        <button type="button" onClick={onCancel}>Cancel</button>
+    <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+      {/* Name */}
+      <div className="space-y-1">
+        <label className={labelClass}>Certificate Name <span className="text-red-500">*</span></label>
+        <input
+          name="name"
+          value={form.name}
+          onChange={handleChange}
+          required
+          placeholder="e.g. AWS Certified Solutions Architect"
+          className={fieldClass}
+        />
+      </div>
+
+      {/* Issuing Organization + Credential ID */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label className={labelClass}>Issuing Organization</label>
+          <input
+            name="issuing_organization"
+            value={form.issuing_organization}
+            onChange={handleChange}
+            placeholder="e.g. Amazon Web Services"
+            className={fieldClass}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className={labelClass}>Credential ID</label>
+          <input
+            name="credential_id"
+            value={form.credential_id}
+            onChange={handleChange}
+            placeholder="e.g. ABC123XYZ"
+            className={fieldClass}
+          />
+        </div>
+      </div>
+
+      {/* Issue Date + Expiry Date */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label className={labelClass}>Issue Date</label>
+          <input
+            name="issue_date"
+            value={form.issue_date}
+            onChange={handleChange}
+            placeholder="YYYY-MM-DD"
+            className={fieldClass}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className={labelClass}>Expiry Date</label>
+          <input
+            name="expiry_date"
+            value={form.expiry_date}
+            onChange={handleChange}
+            placeholder="YYYY-MM-DD or leave blank"
+            className={fieldClass}
+          />
+        </div>
+      </div>
+
+      {/* Credential URL */}
+      <div className="space-y-1">
+        <label className={labelClass}>Credential URL</label>
+        <div className="relative">
+          <Globe size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            name="credential_url"
+            value={form.credential_url}
+            onChange={handleChange}
+            placeholder="https://..."
+            className={`${fieldClass} pl-9`}
+          />
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-3 pt-1">
+        <button
+          type="submit"
+          disabled={isSaving}
+          className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors disabled:opacity-50 text-sm"
+        >
+          {isSaving ? 'Saving...' : 'Save'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-lg transition-colors text-sm"
+        >
+          Cancel
+        </button>
       </div>
     </form>
   )
