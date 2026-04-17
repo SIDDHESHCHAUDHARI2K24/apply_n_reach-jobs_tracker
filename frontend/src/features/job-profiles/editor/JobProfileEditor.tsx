@@ -17,42 +17,40 @@ export function JobProfileEditor() {
   const [searchParams] = useSearchParams()
   const activeTab = searchParams.get('tab') ?? 'personal'
 
-  if (!jobProfileId) return <div>Invalid profile ID</div>
+  if (!jobProfileId) return <div className="p-6 text-red-500">Invalid profile ID</div>
 
   return (
-    <div style={{ display: 'flex', gap: '1rem', height: 'calc(100vh - 120px)' }}>
+    <div className="flex gap-0 h-[calc(100vh-64px)] overflow-hidden">
       {/* Left tab rail */}
-      <div style={{ width: 160, borderRight: '1px solid #e5e7eb' }}>
-        <nav>
-          {SECTIONS.map(s => (
-            <div key={s.key}>
-              <Link
-                to={`/job-profiles/${jobProfileId}/edit?tab=${s.key}`}
-                style={{
-                  display: 'block',
-                  padding: '0.5rem',
-                  fontWeight: activeTab === s.key ? 700 : 400,
-                  textDecoration: 'none',
-                  background: activeTab === s.key ? '#f5f3ff' : 'transparent',
-                }}
-              >
-                {s.label}
-              </Link>
-            </div>
-          ))}
-        </nav>
-      </div>
+      <nav className="w-40 shrink-0 bg-white border-r border-slate-200 flex flex-col py-3 overflow-y-auto">
+        <p className="px-4 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Sections</p>
+        {SECTIONS.map(s => (
+          <Link
+            key={s.key}
+            to={`/job-profiles/${jobProfileId}/edit?tab=${s.key}`}
+            className={`relative flex items-center px-4 py-2.5 text-sm font-medium transition-colors no-underline ${
+              activeTab === s.key
+                ? 'text-sky-600 bg-sky-50 border-l-2 border-sky-500'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-l-2 border-transparent'
+            }`}
+          >
+            {s.label}
+          </Link>
+        ))}
+      </nav>
 
       {/* Main editor area */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1rem' }}>
-          Editing section: <strong>{activeTab}</strong>
-        </p>
-        <JPSectionContent jobProfileId={jobProfileId} section={activeTab} />
+      <div className="flex-1 overflow-y-auto bg-slate-50 p-6">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <h2 className="text-lg mb-4 capitalize" style={{ fontFamily: 'var(--font-heading)' }}>
+            {activeTab}
+          </h2>
+          <JPSectionContent jobProfileId={jobProfileId} section={activeTab} />
+        </div>
       </div>
 
       {/* Right render panel */}
-      <div style={{ width: 280 }}>
+      <div className="w-[300px] shrink-0 overflow-y-auto bg-white border-l border-slate-200 p-4">
         <RenderPanel jobProfileId={jobProfileId} />
       </div>
     </div>
