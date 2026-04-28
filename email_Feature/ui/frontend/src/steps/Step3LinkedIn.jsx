@@ -14,6 +14,24 @@ export default function Step3LinkedIn({ data, onChange }) {
 
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
+          Contact name override (optional)
+        </label>
+        <p className="text-xs text-slate-400 mb-2">
+          If Apollo returns only a first name, set the full name here (for example:
+          Meagan Leddick). This will be used in personalization and preview.
+        </p>
+        <input
+          type="text"
+          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg
+                     focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+          placeholder="Meagan Leddick"
+          value={data.contactNameOverride || ''}
+          onChange={e => onChange({ contactNameOverride: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
           LinkedIn profile context
         </label>
         <p className="text-xs text-slate-400 mb-2">
@@ -37,7 +55,7 @@ export default function Step3LinkedIn({ data, onChange }) {
 
       <button
         className="text-sm text-slate-400 hover:text-slate-600 underline underline-offset-2"
-        onClick={() => onChange({ linkedinPaste: '' })}
+        onClick={() => onChange({ linkedinPaste: '', contactNameOverride: '' })}
       >
         Skip this step
       </button>

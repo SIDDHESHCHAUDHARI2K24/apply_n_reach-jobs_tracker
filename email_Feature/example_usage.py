@@ -22,7 +22,9 @@ from __future__ import annotations
 
 # Load .env file before any other imports so API keys are available
 from dotenv import load_dotenv
-load_dotenv()
+from pathlib import Path
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 import sys
 from graph import graph

@@ -23,7 +23,9 @@ from __future__ import annotations
 
 # Load .env before anything else
 from dotenv import load_dotenv
-load_dotenv()
+from pathlib import Path
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 import json
 from typing import Optional

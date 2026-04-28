@@ -1,7 +1,7 @@
 // src/steps/Step5Export.jsx
 import { useState } from 'react'
 
-const STATUS_OPTIONS = ['drafted', 'copied', 'sent', 'followup_due', 'replied']
+/*const STATUS_OPTIONS = ['drafted', 'copied', 'sent', 'followup_due', 'replied']
 
 const STATUS_COLORS = {
   drafted:      'bg-slate-100 text-slate-600',
@@ -87,7 +87,7 @@ export default function Step5Export({ finalResult, editedBody, selectedSubject, 
   return (
     <div className="space-y-5">
 
-      {/* Status tracker */}
+      {// Status tracker }
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-2">
           Outreach status
@@ -119,7 +119,7 @@ export default function Step5Export({ finalResult, editedBody, selectedSubject, 
         )}
       </div>
 
-      {/* Subject line */}
+      {// Subject line }
       <div className="bg-slate-50 rounded-lg border border-slate-200 px-4 py-3">
         <div className="flex items-center justify-between mb-1">
           <p className="text-xs font-medium text-slate-500">Subject line</p>
@@ -130,7 +130,7 @@ export default function Step5Export({ finalResult, editedBody, selectedSubject, 
         <p className="text-sm text-slate-700">{subject}</p>
       </div>
 
-      {/* Email body preview */}
+      {// Email body preview }
       <div>
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm font-medium text-slate-700">Email body</p>
@@ -144,7 +144,7 @@ export default function Step5Export({ finalResult, editedBody, selectedSubject, 
         </div>
       </div>
 
-      {/* Send via Resend */}
+      {/* Send via Resend }
       <div className="border border-slate-200 rounded-xl p-4 space-y-3">
         <p className="text-sm font-medium text-slate-700">Send via Resend</p>
         <div className="flex gap-2">
@@ -176,7 +176,7 @@ export default function Step5Export({ finalResult, editedBody, selectedSubject, 
         </p>
       </div>
 
-      {/* Other actions */}
+      {/* Other actions}
       <div className="grid grid-cols-1 gap-2">
         <button
           onClick={copyBody}
@@ -205,7 +205,7 @@ export default function Step5Export({ finalResult, editedBody, selectedSubject, 
         </button>
       </div>
 
-      {/* Thread ID */}
+      {/* Thread ID}
       {finalResult?.thread_id && (
         <p className="text-xs text-slate-300 text-center">
           Thread: {finalResult.thread_id}
@@ -213,7 +213,7 @@ export default function Step5Export({ finalResult, editedBody, selectedSubject, 
       )}
     </div>
   )
-}
+}*/
 
 const STATUS_OPTIONS = ['drafted', 'copied', 'sent', 'followup_due', 'replied']
 
@@ -225,14 +225,16 @@ const STATUS_COLORS = {
   replied:      'bg-green-100 text-green-700',
 }
 
-export default function Step5Export({ finalResult, editedBody, selectedSubject }) {
+export default function Step5Export({ finalResult, editedBody, selectedSubject, threadId, recipientType, contactName, contactEmail: propContactEmail }) {
   const [status, setStatus] = useState(finalResult?.status || 'drafted')
   const [copied, setCopied] = useState(false)
   const [copiedSubject, setCopiedSubject] = useState(false)
+  const [savingDraft, setSavingDraft] = useState(false)
+  const [draftSaved, setDraftSaved] = useState(false)
 
   const emailBody = finalResult?.email_body || editedBody || ''
   const subject = finalResult ? selectedSubject : selectedSubject
-  const contactEmail = finalResult?.contact_email
+  const contactEmail = finalResult?.contact_email || propContactEmail
 
   const copyBody = async () => {
     await navigator.clipboard.writeText(emailBody)
@@ -263,6 +265,43 @@ export default function Step5Export({ finalResult, editedBody, selectedSubject }
     const url = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`
     window.open(url)
     setStatus('copied')
+  }
+
+  const saveDraft = async () => {
+    if (!threadId) {
+      alert('Error: Missing thread ID')
+      return
+    }
+    
+    setSavingDraft(true)
+    try {
+      const response = await fetch('/api/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          thread_id: threadId,
+          subject,
+          body: emailBody,
+          recipient_type: recipientType || 'recruiter',
+          contact_name: contactName,
+          contact_email: contactEmail,
+          notes: `Draft saved from outreach email generator`,
+        }),
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to save draft')
+      }
+      
+      setDraftSaved(true)
+      setTimeout(() => setDraftSaved(false), 3000)
+    } catch (err) {
+      alert(`Error saving draft: ${err.message}`)
+    } finally {
+      setSavingDraft(false)
+    }
   }
 
   return (
@@ -336,6 +375,16 @@ export default function Step5Export({ finalResult, editedBody, selectedSubject }
                      font-medium rounded-lg transition-colors"
         >
           {copied ? 'Copied to clipboard!' : 'Copy email body'}
+        </button>
+
+        <button
+          onClick={saveDraft}
+          disabled={savingDraft}
+          className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white text-sm
+                     font-medium rounded-lg transition-colors disabled:opacity-40
+                     disabled:cursor-not-allowed"
+        >
+          {savingDraft ? 'Saving draft...' : draftSaved ? '✓ Draft saved!' : 'Save as draft'}
         </button>
 
         {contactEmail && (

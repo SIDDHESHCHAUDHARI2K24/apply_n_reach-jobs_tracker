@@ -22,6 +22,7 @@ export default function Step4Review({ result, edited, onChange }) {
   } = result
 
   const selectedSubject = subject_options[activeSubject] || ''
+  const missingLastName = Boolean(contact_name && !String(contact_name).trim().includes(' '))
 
   // Keep parent in sync with subject selection
   const handleSubjectSelect = (idx) => {
@@ -51,6 +52,11 @@ export default function Step4Review({ result, edited, onChange }) {
           </div>
           <div>
             <p className="text-sm font-medium text-green-800">{contact_name}</p>
+            {missingLastName && (
+              <p className="text-xs text-amber-700 mt-0.5">
+                Apollo returned only first name for this contact.
+              </p>
+            )}
             {contact_title && <p className="text-xs text-green-700">{contact_title}</p>}
             {contact_email
               ? <p className="text-xs text-green-600 mt-0.5">Verified email found: {contact_email}</p>

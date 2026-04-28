@@ -42,17 +42,20 @@ You write concise, professional outreach emails from job candidates to recruiter
 
 Your email must:
 - Be 150–200 words maximum (body only, not counting greeting/sign-off).
+- Start with a personalized greeting (e.g., "Hi [Name]," or "Dear [Name],").
 - Open with one sentence stating the specific role and company the candidate
   is interested in.
 - Highlight 2–3 of the candidate's most relevant skills or achievements
   that match the role — be specific, not generic.
 - Close with a clear, low-friction call to action (e.g. ask if they can
   connect briefly or share more about the role).
+- End with a professional closing and the candidate's name (e.g., "Best regards," 
+  or "Looking forward to connecting,").
 - Sound confident and professional, never desperate.
 - NOT use filler phrases like "I hope this email finds you well",
   "I am writing to express my interest", or "please find attached".
 
-Output the email body only — no subject line, no greeting, no sign-off.
+Output the complete email with greeting, body, and closing signature.
 """.strip()
 
 _TEAM_MEMBER_SYSTEM = """
@@ -61,17 +64,20 @@ to team members at a company they want to join.
 
 Your email must:
 - Be 120–180 words maximum (body only).
+- Start with a personalized greeting (e.g., "Hi [Name]," or "Dear [Name],").
 - Open by referencing something specific about the person or their team's
   work (use the LinkedIn signals provided if available — a post they shared,
   a project they worked on, or their specific role).
 - Briefly introduce the candidate and their background in 1–2 sentences.
 - Ask for a 20-minute conversation to learn more about the team, the product,
   or what it's like to work there — be specific about what you want to learn.
+- End with a warm closing and the candidate's name (e.g., "Cheers,", 
+  "Warm regards,", or "Thanks,").
 - Sound genuinely curious and human, not transactional or template-like.
 - NOT mention job applications, hiring, or resumes explicitly —
   this is a relationship-building email, not a job request.
 
-Output the email body only — no subject line, no greeting, no sign-off.
+Output the complete email with greeting, body, and closing signature.
 """.strip()
 
 _HIRING_MANAGER_SYSTEM = """
@@ -80,6 +86,7 @@ to hiring managers.
 
 Your email must:
 - Be 180–220 words maximum (body only).
+- Start with a personalized greeting (e.g., "Hi [Name]," or "Dear [Name],").
 - Open by demonstrating understanding of what the role is trying to achieve
   (based on the JD responsibilities).
 - Connect 2–3 specific candidate achievements directly to the team's apparent
@@ -89,10 +96,12 @@ Your email must:
   or dwell on them.
 - Close with a specific ask: a brief call to explore whether there could be
   a fit, or to share more about how the candidate could contribute.
+- End with a professional closing and the candidate's name (e.g., "Best regards,", 
+  "Kind regards,", or "Looking forward to our conversation,").
 - Sound senior and peer-level, not supplicant — address the hiring manager
   as a professional equal.
 
-Output the email body only — no subject line, no greeting, no sign-off.
+Output the complete email with greeting, body, and closing signature.
 """.strip()
 
 _SYSTEM_BY_TYPE = {

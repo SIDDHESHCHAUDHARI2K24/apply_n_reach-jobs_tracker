@@ -3,7 +3,13 @@
 
 const BASE = '/api'
 
-export async function generateEmail({ jobDescription, resume, recipientType, linkedinPaste }) {
+export async function generateEmail({
+  jobDescription,
+  resume,
+  recipientType,
+  linkedinPaste,
+  contactNameOverride,
+}) {
   const res = await fetch(`${BASE}/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -12,6 +18,7 @@ export async function generateEmail({ jobDescription, resume, recipientType, lin
       resume,
       recipient_type: recipientType,
       linkedin_paste: linkedinPaste || null,
+      contact_name_override: contactNameOverride || null,
     }),
   })
   if (!res.ok) {

@@ -34,6 +34,8 @@ from typing import Optional
 import uuid
 import os
 import io
+import datetime
+import requests
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -47,6 +49,10 @@ from state import initial_state
 # Resend configuration — reads from .env
 resend.api_key = os.environ.get("RESEND_API_KEY", "")
 RESEND_FROM = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+
+# Resend API configuration for direct HTTP calls
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+RESEND_API_BASE_URL = "https://api.resend.com"
 
 app = FastAPI(title="Outreach Email API", version="1.0.0")
 
@@ -65,6 +71,9 @@ app.add_middleware(
 # In-memory snapshot store — maps thread_id → last graph result
 _snapshots: dict[str, dict] = {}
 
+# In-memory draft store — maps draft_id → draft data
+_drafts: dict[str, dict] = {}
+
 
 # ---------------------------------------------------------------------------
 # Request / response models
@@ -75,6 +84,7 @@ class GenerateRequest(BaseModel):
     resume: str
     recipient_type: str             # recruiter | team_member | hiring_manager
     linkedin_paste: Optional[str] = None
+    contact_name_override: Optional[str] = None
     thread_id: Optional[str] = None  # auto-generated if not provided
 
 
@@ -122,6 +132,45 @@ class SendResponse(BaseModel):
     success: bool
     message: str
     resend_id: Optional[str] = None
+
+
+class DraftSaveRequest(BaseModel):
+    """Request to save an email draft."""
+    thread_id: str
+    subject: str
+    body: str
+    recipient_type: str
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    notes: Optional[str] = None  # Additional notes about the draft
+
+
+class DraftResponse(BaseModel):
+    """A saved email draft."""
+    draft_id: str
+    thread_id: str
+    subject: str
+    body: str
+    recipient_type: str
+    contact_name: Optional[str]
+    contact_email: Optional[str]
+    notes: Optional[str]
+    created_at: str
+    updated_at: str
+    word_count: int
+
+
+class DraftsListResponse(BaseModel):
+    """List of all saved drafts."""
+    drafts: list[DraftResponse]
+    total_count: int
+
+
+class DraftDeleteResponse(BaseModel):
+    """Response from deleting a draft."""
+    success: bool
+    message: str
+    draft_id: str
 
 
 # ---------------------------------------------------------------------------
@@ -225,10 +274,15 @@ def generate(req: GenerateRequest):
     )
     if req.linkedin_paste and req.linkedin_paste.strip():
         state["raw_linkedin_paste"] = req.linkedin_paste  # type: ignore
+    if req.contact_name_override and req.contact_name_override.strip():
+        state["manual_contact_name"] = req.contact_name_override.strip()  # type: ignore
 
     try:
         result = graph.invoke(state, config=config)
     except Exception as exc:
+        import traceback
+        error_detail = f"Graph error: {str(exc)}\n{traceback.format_exc()}"
+        print(f"ERROR in /api/generate: {error_detail}")
         raise HTTPException(status_code=500, detail=f"Graph error: {exc}")
 
     _snapshots[thread_id] = result
@@ -244,6 +298,22 @@ def generate(req: GenerateRequest):
     subject_options = subject_sets[0].get("options", []) if subject_sets else []
     followup_body = followups[0].get("body", "") if followups else ""
     followup_days = followups[0].get("suggested_send_after_days", 7) if followups else 7
+
+    # Ensure types are correct
+    if not isinstance(email_body, str):
+        email_body = str(email_body) if email_body else ""
+    if not isinstance(word_count, int):
+        try:
+            word_count = int(word_count)
+        except (TypeError, ValueError):
+            word_count = 0
+    if not isinstance(followup_body, str):
+        followup_body = str(followup_body) if followup_body else ""
+    if not isinstance(followup_days, int):
+        try:
+            followup_days = int(followup_days)
+        except (TypeError, ValueError):
+            followup_days = 7
 
     return GenerateResponse(
         thread_id=thread_id,
@@ -288,17 +358,34 @@ def resume(req: ResumeRequest):
     try:
         final = graph.invoke({"user_edits": user_edits}, config=config)
     except Exception as exc:
+        import traceback
+        error_detail = f"Graph resume error: {str(exc)}\n{traceback.format_exc()}"
+        print(f"ERROR in /api/resume: {error_detail}")
         raise HTTPException(status_code=500, detail=f"Graph resume error: {exc}")
 
     _snapshots[req.thread_id] = final
 
     emails = final.get("generated_emails") or []
     email_body = emails[0]["body"] if emails else req.edited_body
+    
+    # Ensure email_body is always a string
+    if not isinstance(email_body, str):
+        email_body = str(email_body) if email_body else ""
+    
     word_count = emails[0]["word_count"] if emails else len(req.edited_body.split())
+
+    # Ensure status is a valid string (default to "drafted" if None or missing)
+    status = final.get("outreach_status") or "drafted"
+    
+    # Ensure word_count is always an integer
+    try:
+        word_count = int(word_count)
+    except (TypeError, ValueError):
+        word_count = 0
 
     return ResumeResponse(
         thread_id=req.thread_id,
-        status=final.get("outreach_status", "drafted"),
+        status=status,
         email_body=email_body,
         selected_subject=req.selected_subject,
         word_count=word_count,
@@ -349,6 +436,225 @@ def send_email(req: SendRequest):
         return SendResponse(
             success=False,
             message=f"Failed to send: {str(exc)}",
+        )
+
+
+# ---------------------------------------------------------------------------
+# Draft Management Endpoints (Resend)
+# ---------------------------------------------------------------------------
+
+@app.post("/api/draft", response_model=DraftResponse)
+def save_draft(req: DraftSaveRequest):
+    """
+    Save an email draft to Resend using HTTP API.
+    
+    Resend drafts API stores draft emails that can be edited and sent later.
+    """
+    if not RESEND_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="RESEND_API_KEY not set. Add it to your .env file."
+        )
+
+    try:
+        # Use Resend HTTP API to create a draft
+        headers = {
+            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Content-Type": "application/json",
+        }
+        
+        draft_payload = {
+            "from": RESEND_FROM,
+            "to": [req.contact_email] if req.contact_email else ["draft@example.com"],
+            "subject": req.subject,
+            "text": req.body,
+        }
+        
+        response = requests.post(
+            f"{RESEND_API_BASE_URL}/emails",
+            headers=headers,
+            json=draft_payload,
+        )
+        
+        if not response.ok:
+            error_msg = response.text
+            try:
+                error_data = response.json()
+                error_msg = error_data.get("message", error_msg)
+            except:
+                pass
+            raise Exception(f"Resend API error: {error_msg}")
+        
+        draft_response = response.json()
+        
+        if not draft_response or "id" not in draft_response:
+            raise Exception(f"Invalid Resend response: {draft_response}")
+
+        draft_id = draft_response.get("id")
+        now_iso = datetime.datetime.now().isoformat()
+        
+        # Store metadata locally for tracking
+        _drafts[draft_id] = {
+            "draft_id": draft_id,
+            "thread_id": req.thread_id,
+            "subject": req.subject,
+            "body": req.body,
+            "recipient_type": req.recipient_type,
+            "contact_name": req.contact_name,
+            "contact_email": req.contact_email,
+            "notes": req.notes,
+            "created_at": now_iso,
+            "updated_at": now_iso,
+            "resend_id": draft_id,
+        }
+
+        return DraftResponse(
+            draft_id=draft_id,
+            thread_id=req.thread_id,
+            subject=req.subject,
+            body=req.body,
+            recipient_type=req.recipient_type,
+            contact_name=req.contact_name,
+            contact_email=req.contact_email,
+            notes=req.notes,
+            created_at=now_iso,
+            updated_at=now_iso,
+            word_count=len(req.body.split()),
+        )
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save draft to Resend: {str(exc)}"
+        )
+
+
+@app.get("/api/drafts", response_model=DraftsListResponse)
+def list_drafts(thread_id: Optional[str] = None):
+    """
+    List all saved email drafts from local storage.
+    
+    Optionally filter by thread_id.
+    """
+    drafts_list = []
+    
+    for draft_id, draft_data in _drafts.items():
+        # Filter by thread_id if provided
+        if thread_id and draft_data.get("thread_id") != thread_id:
+            continue
+        
+        draft_response = DraftResponse(
+            draft_id=draft_id,
+            thread_id=draft_data.get("thread_id", ""),
+            subject=draft_data.get("subject", ""),
+            body=draft_data.get("body", ""),
+            recipient_type=draft_data.get("recipient_type", ""),
+            contact_name=draft_data.get("contact_name"),
+            contact_email=draft_data.get("contact_email"),
+            notes=draft_data.get("notes"),
+            created_at=draft_data.get("created_at", ""),
+            updated_at=draft_data.get("updated_at", ""),
+            word_count=len(draft_data.get("body", "").split()),
+        )
+        drafts_list.append(draft_response)
+    
+    return DraftsListResponse(
+        drafts=drafts_list,
+        total_count=len(drafts_list),
+    )
+
+
+@app.get("/api/draft/{draft_id}", response_model=DraftResponse)
+def get_draft(draft_id: str):
+    """
+    Retrieve a specific draft by ID from local storage.
+    """
+    draft_data = _drafts.get(draft_id)
+    
+    if not draft_data:
+        raise HTTPException(status_code=404, detail=f"Draft {draft_id} not found")
+    
+    return DraftResponse(
+        draft_id=draft_id,
+        thread_id=draft_data.get("thread_id", ""),
+        subject=draft_data.get("subject", ""),
+        body=draft_data.get("body", ""),
+        recipient_type=draft_data.get("recipient_type", ""),
+        contact_name=draft_data.get("contact_name"),
+        contact_email=draft_data.get("contact_email"),
+        notes=draft_data.get("notes"),
+        created_at=draft_data.get("created_at", ""),
+        updated_at=draft_data.get("updated_at", ""),
+        word_count=len(draft_data.get("body", "").split()),
+    )
+
+
+@app.delete("/api/draft/{draft_id}", response_model=DraftDeleteResponse)
+def delete_draft(draft_id: str):
+    """
+    Delete a draft from local storage by ID.
+    """
+    if draft_id not in _drafts:
+        raise HTTPException(status_code=404, detail=f"Draft {draft_id} not found")
+    
+    del _drafts[draft_id]
+    
+    return DraftDeleteResponse(
+        success=True,
+        message=f"Draft {draft_id} deleted successfully",
+        draft_id=draft_id,
+    )
+
+
+@app.post("/api/draft/{draft_id}/send", response_model=SendResponse)
+def send_draft(draft_id: str, to_email: str):
+    """
+    Send a draft email using Resend.
+    
+    Query parameter: to_email (email address to send to)
+    """
+    if not resend.api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="RESEND_API_KEY not set. Add it to your .env file."
+        )
+
+    if not to_email or "@" not in to_email:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid recipient email address."
+        )
+
+    draft_data = _drafts.get(draft_id)
+    if not draft_data:
+        raise HTTPException(status_code=404, detail=f"Draft {draft_id} not found")
+
+    try:
+        # Send the email with the draft content
+        send_response = resend.Emails.send({
+            "from": RESEND_FROM,
+            "to": [to_email],
+            "subject": draft_data.get("subject", ""),
+            "text": draft_data.get("body", ""),
+        })
+
+        if not send_response or "id" not in send_response:
+            raise Exception(f"Invalid send response: {send_response}")
+
+        # Delete the draft after sending
+        if draft_id in _drafts:
+            del _drafts[draft_id]
+
+        return SendResponse(
+            success=True,
+            message=f"Draft sent successfully to {to_email}",
+            resend_id=send_response.get("id"),
+        )
+
+    except Exception as exc:
+        return SendResponse(
+            success=False,
+            message=f"Failed to send draft: {str(exc)}",
         )
 
 

@@ -20,6 +20,7 @@ const INITIAL_FORM = {
   resume: '',
   recipientType: 'recruiter',
   linkedinPaste: '',
+  contactNameOverride: '',
 }
 
 const INITIAL_EDITED = {
@@ -61,6 +62,7 @@ export default function App() {
           resume: form.resume,
           recipientType: form.recipientType,
           linkedinPaste: form.linkedinPaste,
+          contactNameOverride: form.contactNameOverride,
         })
         setGenerateResult(result)
         setEdited({
@@ -196,6 +198,9 @@ export default function App() {
               editedBody={edited.editedBody}
               selectedSubject={edited.selectedSubject}
               threadId={generateResult?.thread_id}
+              recipientType={form.recipientType}
+              contactName={generateResult?.contact_name}
+              contactEmail={generateResult?.contact_email}
             />
           )}
         </div>

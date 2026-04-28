@@ -25,9 +25,11 @@ Output files are written to eval/results/ (created if it doesn't exist).
 
 from __future__ import annotations
 
+from pathlib import Path
+
 # Load .env before any API calls
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 import argparse
 import csv
@@ -36,7 +38,6 @@ import os
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
 
 # Allow running as `python -m eval.run_eval` from the project root
 sys.path.insert(0, str(Path(__file__).parent.parent))
