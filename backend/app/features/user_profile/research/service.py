@@ -11,7 +11,7 @@ async def list_researches(conn: asyncpg.Connection, profile_id: int) -> list[asy
     """List all research entries for a profile, ordered by created_at DESC."""
     await models.ensure_research_schema(conn)
     return await conn.fetch(
-        "SELECT id, profile_id, paper_name, publication_link, description, "
+        "SELECT id, profile_id, paper_name, publication_link, description, journal, year, "
         "created_at, updated_at FROM researches WHERE profile_id = $1 "
         "ORDER BY created_at DESC",
         profile_id,
@@ -24,7 +24,7 @@ async def get_research(
     """Fetch a single research entry, verifying ownership."""
     await models.ensure_research_schema(conn)
     row = await conn.fetchrow(
-        "SELECT id, profile_id, paper_name, publication_link, description, "
+        "SELECT id, profile_id, paper_name, publication_link, description, journal, year, "
         "created_at, updated_at FROM researches WHERE id = $1 AND profile_id = $2",
         research_id,
         profile_id,
@@ -40,14 +40,16 @@ async def add_research(
     """Create a new research entry for a profile."""
     await models.ensure_research_schema(conn)
     return await conn.fetchrow(
-        "INSERT INTO researches (profile_id, paper_name, publication_link, description) "
-        "VALUES ($1, $2, $3, $4) "
-        "RETURNING id, profile_id, paper_name, publication_link, description, "
+        "INSERT INTO researches (profile_id, paper_name, publication_link, description, journal, year) "
+        "VALUES ($1, $2, $3, $4, $5, $6) "
+        "RETURNING id, profile_id, paper_name, publication_link, description, journal, year, "
         "created_at, updated_at",
         profile_id,
         data.paper_name,
         data.publication_link,
         data.description,
+        data.journal,
+        data.year,
     )
 
 
