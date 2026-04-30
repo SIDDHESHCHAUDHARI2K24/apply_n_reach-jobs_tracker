@@ -46,12 +46,12 @@ function mapPersonal(row: JobProfilePersonalResponse): JPPersonal {
     job_profile_id: toStringId(row.job_profile_id),
     full_name: row.full_name ?? null,
     email: row.email ?? null,
-    phone: null,
-    location: null,
+    phone: (row as any).phone ?? null,
+    location: (row as any).location ?? null,
     linkedin_url: row.linkedin_url ?? null,
     github_url: row.github_url ?? null,
     portfolio_url: row.portfolio_url ?? null,
-    summary: null,
+    summary: (row as any).summary ?? null,
     updated_at: row.updated_at,
   }
 }
@@ -90,11 +90,11 @@ function mapProject(row: JobProfileProjectResponse): JPProject {
     job_profile_id: toStringId(row.job_profile_id),
     title: row.project_name,
     description: row.description ?? null,
-    technologies: [],
+    technologies: (row as any).technologies ?? [],
     url: row.reference_links?.[0] ?? null,
     start_date: row.start_month_year ?? null,
     end_date: row.end_month_year ?? null,
-    bullet_points: [],
+    bullet_points: (row as any).bullet_points ?? [],
   }
 }
 
@@ -103,9 +103,9 @@ function mapResearch(row: JobProfileResearchResponse): JPResearch {
     id: toStringId(row.id),
     job_profile_id: toStringId(row.job_profile_id),
     title: row.paper_name,
-    institution: null,
-    journal: null,
-    year: null,
+    institution: (row as any).institution ?? null,
+    journal: (row as any).journal ?? null,
+    year: (row as any).year ?? null,
     description: row.description ?? null,
     url: row.publication_link ?? null,
     bullet_points: [],
@@ -168,6 +168,9 @@ export const jobProfileApi = {
         linkedin_url: data.linkedin_url ?? undefined,
         github_url: data.github_url ?? undefined,
         portfolio_url: data.portfolio_url ?? undefined,
+        summary: data.summary ?? undefined,
+        location: data.location ?? undefined,
+        phone: data.phone ?? undefined,
       },
     })
     return mapPersonal(response)
@@ -269,6 +272,7 @@ export const jobProfileApi = {
         start_month_year: data.start_date ?? null,
         end_month_year: data.end_date ?? null,
         reference_links: data.url ? [data.url] : [],
+        technologies: data.technologies ?? [],
       },
     })
     return mapProject(response)
@@ -282,6 +286,7 @@ export const jobProfileApi = {
         start_month_year: data.start_date ?? undefined,
         end_month_year: data.end_date ?? undefined,
         reference_links: data.url ? [data.url] : undefined,
+        technologies: data.technologies ?? undefined,
       },
     })
     return mapProject(response)
@@ -306,6 +311,8 @@ export const jobProfileApi = {
         paper_name: data.title,
         publication_link: data.url ?? '',
         description: data.description ?? null,
+        journal: (data as any).journal ?? undefined,
+        year: (data as any).year ?? undefined,
       },
     })
     return mapResearch(response)
@@ -317,6 +324,8 @@ export const jobProfileApi = {
         paper_name: data.title ?? undefined,
         publication_link: data.url ?? undefined,
         description: data.description ?? undefined,
+        journal: (data as any).journal ?? undefined,
+        year: (data as any).year ?? undefined,
       },
     })
     return mapResearch(response)
@@ -389,9 +398,9 @@ export const jobProfileApi = {
 
   // Resume render
   triggerRender: (jpId: string) =>
-    apiRequest<ResumeMetadata>(`/job-profiles/${jpId}/resume/render`, { method: 'POST' }),
+    apiRequest<ResumeMetadata>(`/job-profiles/${jpId}/latex-resume/render`, { method: 'POST' }),
   getResumeMetadata: (jpId: string) =>
-    apiRequest<ResumeMetadata>(`/job-profiles/${jpId}/resume/metadata`),
+    apiRequest<ResumeMetadata>(`/job-profiles/${jpId}/latex-resume`),
   downloadPdf: (jpId: string) =>
-    apiRequestBlob(`/job-profiles/${jpId}/resume/pdf`),
+    apiRequestBlob(`/job-profiles/${jpId}/latex-resume/pdf`),
 }

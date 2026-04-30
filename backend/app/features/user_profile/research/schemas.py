@@ -49,10 +49,6 @@ class ResearchCreate(BaseSchema):
         return sanitize_text(v, max_length=10)
 
 
-class ResearchUpdate(ResearchCreate):
-    """Request schema for updating a research entry (alias for ResearchCreate)."""
-
-
 class ResearchUpdate(BaseSchema):
     """Request schema for partially updating a research entry (all fields optional)."""
 

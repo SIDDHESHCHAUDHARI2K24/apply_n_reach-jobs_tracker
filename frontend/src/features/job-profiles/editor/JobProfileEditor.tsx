@@ -4,6 +4,12 @@ import Link from 'next/link'
 import { useParams, useSearchParams } from 'next/navigation'
 import { RenderPanel } from '@features/job-profiles/render/RenderPanel'
 import { JPSectionContent } from './JPSectionContent'
+import { JPEducationList } from '@features/job-profiles/sections/education/JPEducationList'
+import { JPExperienceList } from '@features/job-profiles/sections/experience/JPExperienceList'
+import { JPProjectList } from '@features/job-profiles/sections/projects/JPProjectList'
+import { JPResearchList } from '@features/job-profiles/sections/research/JPResearchList'
+import { JPCertList } from '@features/job-profiles/sections/certifications/JPCertList'
+import { JPSkillsEditor } from '@features/job-profiles/sections/skills/JPSkillsEditor'
 
 const SECTIONS = [
   { label: 'Personal', key: 'personal' },
@@ -49,7 +55,13 @@ export function JobProfileEditor() {
           <h2 className="text-lg mb-4 capitalize" style={{ fontFamily: 'var(--font-heading)' }}>
             {activeTab}
           </h2>
-          <JPSectionContent jobProfileId={jobProfileId} section={activeTab} />
+          {activeTab === 'personal' && <JPSectionContent jobProfileId={jobProfileId} section="personal" />}
+          {activeTab === 'education' && <JPEducationList jobProfileId={jobProfileId} />}
+          {activeTab === 'experience' && <JPExperienceList jobProfileId={jobProfileId} />}
+          {activeTab === 'projects' && <JPProjectList jobProfileId={jobProfileId} />}
+          {activeTab === 'research' && <JPResearchList jobProfileId={jobProfileId} />}
+          {activeTab === 'certifications' && <JPCertList jobProfileId={jobProfileId} />}
+          {activeTab === 'skills' && <JPSkillsEditor jobProfileId={jobProfileId} />}
         </div>
       </div>
 

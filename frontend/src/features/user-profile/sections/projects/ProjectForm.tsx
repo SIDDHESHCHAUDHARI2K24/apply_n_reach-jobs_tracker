@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Globe } from 'lucide-react'
 import type { Project } from '@features/user-profile/types'
+import { MonthYearPicker } from '../../../../components/MonthYearPicker'
 
 type FormFields = {
   title: string
@@ -115,21 +116,19 @@ export function ProjectForm({ initial, isSaving, onSave, onCancel }: Props) {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <label className={labelClass}>Start Date</label>
-          <input
-            name="start_date"
+          <MonthYearPicker
             value={form.start_date}
-            onChange={handleChange}
-            placeholder="MM/YYYY"
+            onChange={(val) => setForm(f => ({ ...f, start_date: val }))}
+            placeholder="Start Date"
             className={fieldClass}
           />
         </div>
         <div className="space-y-1">
           <label className={labelClass}>End Date</label>
-          <input
-            name="end_date"
+          <MonthYearPicker
             value={form.end_date}
-            onChange={handleChange}
-            placeholder="MM/YYYY or leave blank"
+            onChange={(val) => setForm(f => ({ ...f, end_date: val }))}
+            placeholder="End Date"
             className={fieldClass}
           />
         </div>

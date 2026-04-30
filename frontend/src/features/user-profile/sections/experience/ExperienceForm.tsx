@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import type { Experience } from '@features/user-profile/types'
+import { MonthYearPicker } from '../../../../components/MonthYearPicker'
 
 type FormFields = {
   company: string
@@ -7,6 +8,7 @@ type FormFields = {
   location: string
   start_date: string
   end_date: string
+  is_current: boolean
   context: string
   bullet_points: string
 }
@@ -18,6 +20,7 @@ function toForm(item?: Experience): FormFields {
     location: item?.location ?? '',
     start_date: item?.start_date ?? '',
     end_date: item?.end_date ?? '',
+    is_current: item?.is_current ?? !item?.end_date,
     context: item?.context ?? '',
     bullet_points: item?.bullet_points.join('\n') ?? '',
   }
@@ -29,8 +32,8 @@ function fromForm(form: FormFields): Omit<Experience, 'id' | 'profile_id' | 'cre
     title: form.title,
     location: form.location || null,
     start_date: form.start_date || null,
-    end_date: form.end_date || null,
-    is_current: false,
+    end_date: form.is_current ? null : (form.end_date || null),
+    is_current: !!form.is_current,
     context: form.context || null,
     bullet_points: form.bullet_points ? form.bullet_points.split('\n').filter(l => l.trim()) : [],
   }
@@ -79,12 +82,37 @@ export function ExperienceForm({ initial, isSaving, onSave, onCancel }: Props) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Start Date</label>
-          <input name="start_date" value={form.start_date} onChange={handleChange} placeholder="MM/YYYY" className={inputClass} />
+          <MonthYearPicker
+            value={form.start_date}
+            onChange={(val) => setForm(f => ({ ...f, start_date: val }))}
+            placeholder="Start Date"
+            className={inputClass}
+          />
         </div>
         <div>
           <label className={labelClass}>End Date</label>
-          <input name="end_date" value={form.end_date} onChange={handleChange} placeholder="MM/YYYY" className={inputClass} />
+          <MonthYearPicker
+            value={form.end_date}
+            onChange={(val) => setForm(f => ({ ...f, end_date: val }))}
+            placeholder="End Date"
+            className={inputClass}
+            disabled={!!form.is_current}
+          />
         </div>
+      </div>
+
+      <div className="flex items-center gap-2 mt-1">
+        <input
+          type="checkbox"
+          id="is_current"
+          checked={!!form.is_current}
+          onChange={(e) => {
+            const checked = e.target.checked
+            setForm(f => ({ ...f, is_current: checked, end_date: checked ? '' : f.end_date }))
+          }}
+          className="w-4 h-4 text-sky-600 border-slate-300 rounded focus:ring-sky-500"
+        />
+        <label htmlFor="is_current" className="text-sm text-slate-600">I currently work here</label>
       </div>
 
       <div>

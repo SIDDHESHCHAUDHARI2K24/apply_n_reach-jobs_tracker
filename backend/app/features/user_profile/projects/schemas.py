@@ -26,7 +26,6 @@ class ProjectCreate(BaseSchema):
     start_month_year: str
     end_month_year: Optional[str] = None
     reference_links: list[str] = []
-    technologies: list[str] = []
 
     @field_validator("project_name", mode="before")
     @classmethod
@@ -37,13 +36,6 @@ class ProjectCreate(BaseSchema):
     @classmethod
     def sanitize_description(cls, v):
         return sanitize_text(v, max_length=2000)
-
-    @field_validator("technologies", mode="before")
-    @classmethod
-    def sanitize_technologies(cls, v):
-        if not isinstance(v, list):
-            raise ValueError("technologies must be a list")
-        return [sanitize_text(str(item), max_length=100) for item in v]
 
     @field_validator("start_month_year", mode="before")
     @classmethod
@@ -171,6 +163,5 @@ class ProjectResponse(BaseSchema):
     start_month_year: str
     end_month_year: Optional[str] = None
     reference_links: list[str] = []
-    technologies: list[str] = []
     created_at: datetime
     updated_at: datetime

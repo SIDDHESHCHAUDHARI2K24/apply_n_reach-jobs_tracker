@@ -30,13 +30,55 @@ function SectionSummary({ section, data }: { section: string; data: unknown }) {
             <p className="text-sm text-slate-800">{String(p.email)}</p>
           </div>
         )}
-        {!!p.headline && (
+        {!!p.phone && (
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Headline</span>
-            <p className="text-sm text-slate-800">{String(p.headline)}</p>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Phone</span>
+            <p className="text-sm text-slate-800">{String(p.phone)}</p>
           </div>
         )}
-        {!p.full_name && !p.email && !p.headline && (
+        {!!p.location && (
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Location</span>
+            <p className="text-sm text-slate-800">{String(p.location)}</p>
+          </div>
+        )}
+        {!!p.linkedin_url && (
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">LinkedIn</span>
+            <p className="text-sm text-slate-800">
+              <a href={String(p.linkedin_url)} target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:underline">
+                {String(p.linkedin_url)}
+              </a>
+            </p>
+          </div>
+        )}
+        {!!p.github_url && (
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">GitHub</span>
+            <p className="text-sm text-slate-800">
+              <a href={String(p.github_url)} target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:underline">
+                {String(p.github_url)}
+              </a>
+            </p>
+          </div>
+        )}
+        {!!p.portfolio_url && (
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Portfolio</span>
+            <p className="text-sm text-slate-800">
+              <a href={String(p.portfolio_url)} target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:underline">
+                {String(p.portfolio_url)}
+              </a>
+            </p>
+          </div>
+        )}
+        {!!p.summary && (
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Summary</span>
+            <p className="text-sm text-slate-800">{String(p.summary)}</p>
+          </div>
+        )}
+        {!p.full_name && !p.email && !p.phone && !p.location && !p.linkedin_url && !p.github_url && !p.portfolio_url && !p.summary && (
           <p className="text-sm text-slate-400">No personal details saved yet.</p>
         )}
       </div>

@@ -82,14 +82,18 @@ export function ResearchForm({ initial, isSaving, onSave, onCancel }: Props) {
       {/* Year */}
       <div className="space-y-1" style={{ maxWidth: '160px' }}>
         <label className={labelClass}>Year</label>
-        <input
+        <select
           name="year"
           value={form.year}
-          onChange={handleChange}
-          maxLength={4}
-          placeholder="2024"
+          onChange={(e) => setForm(f => ({ ...f, year: e.target.value }))}
           className={fieldClass}
-        />
+        >
+          <option value="">Select Year</option>
+          {Array.from({ length: 51 }, (_, i) => {
+            const y = new Date().getFullYear() - i
+            return <option key={y} value={String(y)}>{y}</option>
+          }).reverse()}
+        </select>
       </div>
 
       {/* Description */}
