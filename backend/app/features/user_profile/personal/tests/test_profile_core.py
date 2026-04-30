@@ -144,6 +144,51 @@ def test_patch_personal_unauthenticated(client):
     assert resp.status_code == 401
 
 
+def test_patch_personal_summary_saved(authenticated_client):
+    """PATCH /profile/personal saves summary field correctly."""
+    client, _ = authenticated_client
+    client.post("/profile")
+    email = f"summary-{uuid.uuid4().hex}@example.com"
+    resp = client.patch("/profile/personal", json={
+        "full_name": "Summary User",
+        "email": email,
+        "linkedin_url": "https://linkedin.com/in/summary",
+        "summary": "A test summary",
+    })
+    assert resp.status_code == 200
+    assert resp.json()["summary"] == "A test summary"
+
+
+def test_patch_personal_location_saved(authenticated_client):
+    """PATCH /profile/personal saves location field correctly."""
+    client, _ = authenticated_client
+    client.post("/profile")
+    email = f"location-{uuid.uuid4().hex}@example.com"
+    resp = client.patch("/profile/personal", json={
+        "full_name": "Location User",
+        "email": email,
+        "linkedin_url": "https://linkedin.com/in/location",
+        "location": "New York",
+    })
+    assert resp.status_code == 200
+    assert resp.json()["location"] == "New York"
+
+
+def test_patch_personal_phone_saved(authenticated_client):
+    """PATCH /profile/personal saves phone field correctly."""
+    client, _ = authenticated_client
+    client.post("/profile")
+    email = f"phone-{uuid.uuid4().hex}@example.com"
+    resp = client.patch("/profile/personal", json={
+        "full_name": "Phone User",
+        "email": email,
+        "linkedin_url": "https://linkedin.com/in/phone",
+        "phone": "+1-555-0100",
+    })
+    assert resp.status_code == 200
+    assert resp.json()["phone"] == "+1-555-0100"
+
+
 # ─── Ownership isolation ─────────────────────────────────────────────────────
 
 def test_ownership_isolation(app):
