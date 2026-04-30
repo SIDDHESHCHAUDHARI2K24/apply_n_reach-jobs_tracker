@@ -128,3 +128,27 @@ def test_html_in_paper_name_stripped(authenticated_client):
 def test_unauthenticated_returns_401(client):
     resp = client.get("/profile/research")
     assert resp.status_code == 401
+
+
+def test_create_research_with_journal_year(authenticated_client):
+    client, _ = authenticated_client
+    _create_profile(client)
+    payload = _research_payload(journal="Nature", year="2024")
+    resp = client.post("/profile/research", json=payload)
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["journal"] == "Nature"
+    assert data["year"] == "2024"
+
+
+def test_update_research_journal(authenticated_client):
+    client, _ = authenticated_client
+    _create_profile(client)
+    created = client.post("/profile/research", json=_research_payload(journal="Nature", year="2023")).json()
+    assert created["journal"] == "Nature"
+    updated_payload = _research_payload(journal="Science", year="2024")
+    resp = client.patch(f"/profile/research/{created['id']}", json=updated_payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["journal"] == "Science"
+    assert data["year"] == "2024"
