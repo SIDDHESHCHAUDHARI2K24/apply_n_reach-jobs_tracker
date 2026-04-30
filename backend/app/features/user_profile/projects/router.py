@@ -11,11 +11,11 @@ from app.features.user_profile.projects.schemas import ProjectCreate, ProjectRes
 router = APIRouter(prefix="/profile/projects", tags=["user-profile"])
 
 
-def _row_to_response(row: asyncpg.Record) -> ProjectResponse:
-    """Convert an asyncpg Record to ProjectResponse, deserializing JSONB fields."""
+def _row_to_response(row) -> ProjectResponse:
+    """Convert an asyncpg Record or dict to ProjectResponse, deserializing JSONB fields."""
     data = dict(row)
-    for field in ("reference_links",):
-        if isinstance(data[field], str):
+    for field in ("reference_links", "technologies"):
+        if isinstance(data.get(field), str):
             data[field] = json.loads(data[field])
     return ProjectResponse(**data)
 

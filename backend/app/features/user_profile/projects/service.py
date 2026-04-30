@@ -13,7 +13,7 @@ async def list_projects(conn: asyncpg.Connection, profile_id: int) -> list[async
     """List all project entries for a profile, ordered by start_month_year DESC."""
     await models.ensure_projects_schema(conn)
     return await conn.fetch(
-        "SELECT id, profile_id, project_name, description, "
+        "SELECT id, profile_id, project_name, description, technologies, "
         "start_month_year, end_month_year, reference_links, "
         "created_at, updated_at FROM projects WHERE profile_id = $1 "
         "ORDER BY start_month_year DESC",
@@ -27,7 +27,7 @@ async def get_project(
     """Fetch a single project entry, verifying ownership."""
     await models.ensure_projects_schema(conn)
     row = await conn.fetchrow(
-        "SELECT id, profile_id, project_name, description, "
+        "SELECT id, profile_id, project_name, description, technologies, "
         "start_month_year, end_month_year, reference_links, "
         "created_at, updated_at FROM projects WHERE id = $1 AND profile_id = $2",
         project_id,
@@ -43,20 +43,24 @@ async def add_project(
 ) -> asyncpg.Record:
     """Create a new project entry for a profile."""
     await models.ensure_projects_schema(conn)
-    return await conn.fetchrow(
-        "INSERT INTO projects (profile_id, project_name, description, "
+    row = await conn.fetchrow(
+        "INSERT INTO projects (profile_id, project_name, description, technologies, "
         "start_month_year, end_month_year, reference_links) "
-        "VALUES ($1, $2, $3, $4, $5, $6::jsonb) "
-        "RETURNING id, profile_id, project_name, description, "
+        "VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7::jsonb) "
+        "RETURNING id, profile_id, project_name, description, technologies, "
         "start_month_year, end_month_year, reference_links, "
         "created_at, updated_at",
         profile_id,
         data.project_name,
         data.description,
+        json.dumps(data.technologies),
         data.start_month_year,
         data.end_month_year,
         json.dumps(data.reference_links),
     )
+    technologies = json.loads(row["technologies"]) if isinstance(row["technologies"], str) else row["technologies"]
+    reference_links = json.loads(row["reference_links"]) if isinstance(row["reference_links"], str) else row["reference_links"]
+    return {**dict(row), "technologies": technologies, "reference_links": reference_links}
 
 
 async def update_project(
@@ -92,7 +96,9 @@ async def update_project(
     row = await conn.fetchrow(query, *params)
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project entry not found")
-    return row
+    technologies = json.loads(row["technologies"]) if isinstance(row["technologies"], str) else row["technologies"]
+    reference_links = json.loads(row["reference_links"]) if isinstance(row["reference_links"], str) else row["reference_links"]
+    return {**dict(row), "technologies": technologies, "reference_links": reference_links}
 
 
 async def delete_project(
