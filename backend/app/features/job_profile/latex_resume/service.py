@@ -1,7 +1,8 @@
 """Service layer for the latex_resume sub-feature.
 
-Orchestrates: aggregate job profile data → build LaTeX → render PDF → upsert row.
+Orchestrates: aggregate job profile data -> build LaTeX -> render PDF -> upsert row.
 """
+from contextlib import suppress
 import json
 import re
 
@@ -12,6 +13,30 @@ from app.features.job_profile.latex_resume import models
 from app.features.job_profile.latex_resume.renderer import LatexCompileError, render_pdf
 from app.features.job_profile.latex_resume.schemas import ResumeLayoutOptions
 from app.features.job_profile.latex_resume.template_builder import build_latex_document
+
+
+_RENDER_LOCK_NAMESPACE = 98765
+
+
+async def _acquire_render_lock(conn: asyncpg.Connection, job_profile_id: int) -> bool:
+    """Acquire a short-lived advisory lock for a specific job_profile render."""
+    return bool(
+        await conn.fetchval(
+            "SELECT pg_try_advisory_lock($1::int, $2::int)",
+            _RENDER_LOCK_NAMESPACE,
+            job_profile_id,
+        )
+    )
+
+
+async def _release_render_lock(conn: asyncpg.Connection, job_profile_id: int) -> None:
+    """Best-effort advisory unlock for a specific job_profile render."""
+    with suppress(Exception):
+        await conn.fetchval(
+            "SELECT pg_advisory_unlock($1::int, $2::int)",
+            _RENDER_LOCK_NAMESPACE,
+            job_profile_id,
+        )
 
 
 async def aggregate_job_profile_data(
@@ -155,43 +180,53 @@ async def render_resume(
 
     await models.ensure_rendered_resume_schema(conn)
 
-    profile_data = await aggregate_job_profile_data(conn, job_profile_id)
-
-    latex_source = build_latex_document(profile_data, layout)
-    filename_stem = _build_filename_stem(profile_data)
-
-    try:
-        pdf_bytes = render_pdf(latex_source, filename_stem=filename_stem)
-    except LatexCompileError as exc:
+    lock_acquired = await _acquire_render_lock(conn, job_profile_id)
+    if not lock_acquired:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"LaTeX compilation failed: {exc}. Log: {exc.log_tail[:500] if exc.log_tail else 'no log'}",
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A resume render is already in progress for this job profile.",
         )
 
-    layout_json_str = json.dumps(layout.model_dump())
+    try:
+        profile_data = await aggregate_job_profile_data(conn, job_profile_id)
 
-    row = await conn.fetchrow(
-        """
-        INSERT INTO rendered_resume
-            (job_profile_id, latex_source, pdf_content, layout_json, template_name, rendered_at)
-        VALUES ($1, $2, $3, $4::jsonb, $5, NOW())
-        ON CONFLICT (job_profile_id) DO UPDATE SET
-            latex_source = EXCLUDED.latex_source,
-            pdf_content = EXCLUDED.pdf_content,
-            layout_json = EXCLUDED.layout_json,
-            template_name = EXCLUDED.template_name,
-            rendered_at = NOW(),
-            updated_at = NOW()
-        RETURNING job_profile_id, template_name, rendered_at, layout_json
-        """,
-        job_profile_id,
-        latex_source,
-        pdf_bytes,
-        layout_json_str,
-        "jakes_resume_v1",
-    )
+        latex_source = build_latex_document(profile_data, layout)
+        filename_stem = _build_filename_stem(profile_data)
 
-    return _finalize_row(dict(row))
+        try:
+            pdf_bytes = render_pdf(latex_source, filename_stem=filename_stem)
+        except LatexCompileError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"LaTeX compilation failed: {exc}. Log: {exc.log_tail[:500] if exc.log_tail else 'no log'}",
+            )
+
+        layout_json_str = json.dumps(layout.model_dump())
+
+        row = await conn.fetchrow(
+            """
+            INSERT INTO rendered_resume
+                (job_profile_id, latex_source, pdf_content, layout_json, template_name, rendered_at)
+            VALUES ($1, $2, $3, $4::jsonb, $5, NOW())
+            ON CONFLICT (job_profile_id) DO UPDATE SET
+                latex_source = EXCLUDED.latex_source,
+                pdf_content = EXCLUDED.pdf_content,
+                layout_json = EXCLUDED.layout_json,
+                template_name = EXCLUDED.template_name,
+                rendered_at = NOW(),
+                updated_at = NOW()
+            RETURNING job_profile_id, template_name, rendered_at, layout_json, created_at, updated_at
+            """,
+            job_profile_id,
+            latex_source,
+            pdf_bytes,
+            layout_json_str,
+            "jakes_resume_v1",
+        )
+
+        return _finalize_row(dict(row))
+    finally:
+        await _release_render_lock(conn, job_profile_id)
 
 
 async def get_rendered_resume(
@@ -200,7 +235,7 @@ async def get_rendered_resume(
     """Fetch render metadata (no PDF bytes). Returns None if never rendered."""
     await models.ensure_rendered_resume_schema(conn)
     row = await conn.fetchrow(
-        "SELECT job_profile_id, template_name, rendered_at, layout_json "
+        "SELECT job_profile_id, template_name, rendered_at, layout_json, created_at, updated_at "
         "FROM rendered_resume WHERE job_profile_id = $1",
         job_profile_id,
     )
@@ -241,4 +276,6 @@ def _finalize_row(d: dict) -> dict:
             d["layout_json"] = json.loads(d["layout_json"])
         except (json.JSONDecodeError, ValueError):
             d["layout_json"] = {}
+    d.setdefault("status", "completed")
+    d.setdefault("error_message", None)
     return d

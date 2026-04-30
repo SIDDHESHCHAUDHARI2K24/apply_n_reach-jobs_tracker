@@ -133,6 +133,28 @@ function mapImportResult(result: { imported: number[]; skipped: number[]; not_fo
   }
 }
 
+function mapResumeMetadata(row: {
+  job_profile_id: number
+  status?: 'completed'
+  template_name: string
+  rendered_at: string
+  layout_json: Record<string, unknown>
+  error_message?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+}): ResumeMetadata {
+  return {
+    job_profile_id: toStringId(row.job_profile_id),
+    status: row.status ?? 'completed',
+    template_name: row.template_name,
+    rendered_at: row.rendered_at,
+    layout_json: row.layout_json ?? {},
+    error_message: row.error_message ?? null,
+    created_at: row.created_at ?? null,
+    updated_at: row.updated_at ?? null,
+  }
+}
+
 export const jobProfileApi = {
   // List + CRUD
   list: async (params?: { limit?: number; offset?: number; status?: string }) => {
@@ -154,6 +176,10 @@ export const jobProfileApi = {
     const response = await apiRequest<JobProfileResponse>('/job-profiles', { method: 'POST', body: payload })
     return mapJobProfile(response)
   },
+  activate: async (id: string) =>
+    mapJobProfile(await apiRequest<JobProfileResponse>(`/job-profiles/${id}/status/activate`, { method: 'POST' })),
+  archive: async (id: string) =>
+    mapJobProfile(await apiRequest<JobProfileResponse>(`/job-profiles/${id}/status/archive`, { method: 'POST' })),
   remove: (id: string) =>
     apiRequest<void>(`/job-profiles/${id}`, { method: 'DELETE' }),
 
@@ -397,10 +423,28 @@ export const jobProfileApi = {
   },
 
   // Resume render
-  triggerRender: (jpId: string) =>
-    apiRequest<ResumeMetadata>(`/job-profiles/${jpId}/latex-resume/render`, { method: 'POST' }),
-  getResumeMetadata: (jpId: string) =>
-    apiRequest<ResumeMetadata>(`/job-profiles/${jpId}/latex-resume`),
+  triggerRender: async (jpId: string) =>
+    mapResumeMetadata(await apiRequest<{
+      job_profile_id: number
+      status?: 'completed'
+      template_name: string
+      rendered_at: string
+      layout_json: Record<string, unknown>
+      error_message?: string | null
+      created_at?: string | null
+      updated_at?: string | null
+    }>(`/job-profiles/${jpId}/latex-resume/render`, { method: 'POST' })),
+  getResumeMetadata: async (jpId: string) =>
+    mapResumeMetadata(await apiRequest<{
+      job_profile_id: number
+      status?: 'completed'
+      template_name: string
+      rendered_at: string
+      layout_json: Record<string, unknown>
+      error_message?: string | null
+      created_at?: string | null
+      updated_at?: string | null
+    }>(`/job-profiles/${jpId}/latex-resume`)),
   downloadPdf: (jpId: string) =>
     apiRequestBlob(`/job-profiles/${jpId}/latex-resume/pdf`),
 }

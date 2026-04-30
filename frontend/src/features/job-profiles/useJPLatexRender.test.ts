@@ -11,84 +11,87 @@ vi.mock('@features/job-profiles/jobProfileApi', () => ({
   },
 }))
 
-vi.useFakeTimers()
-
 const mockApi = jpApiModule.jobProfileApi as unknown as {
   triggerRender: ReturnType<typeof vi.fn>
   getResumeMetadata: ReturnType<typeof vi.fn>
   downloadPdf: ReturnType<typeof vi.fn>
 }
 
-const pendingMeta = { job_profile_id: 'jp1', status: 'pending' as const, latex_source: null, pdf_url: null, error_message: null, created_at: '', updated_at: '' }
-const completedMeta = { ...pendingMeta, status: 'completed' as const }
-const failedMeta = { ...pendingMeta, status: 'failed' as const, error_message: 'LaTeX error' }
+const completedMeta = {
+  job_profile_id: 'jp1',
+  status: 'completed' as const,
+  template_name: 'jakes_resume_v1',
+  rendered_at: '2026-01-01T00:00:00Z',
+  layout_json: {},
+  error_message: null,
+  created_at: null,
+  updated_at: null,
+}
 
 beforeEach(() => vi.clearAllMocks())
-afterEach(() => vi.useRealTimers())
+afterEach(() => {
+  vi.clearAllTimers()
+})
 
 describe('useJPLatexRender', () => {
-  beforeEach(() => vi.useFakeTimers())
+  it('loads existing metadata on mount', async () => {
+    mockApi.getResumeMetadata.mockResolvedValueOnce(completedMeta)
 
-  it('triggers render and polls until completed', async () => {
-    mockApi.triggerRender.mockResolvedValueOnce(pendingMeta)
-    mockApi.getResumeMetadata
-      .mockResolvedValueOnce(pendingMeta)
-      .mockResolvedValueOnce(completedMeta)
+    const { useJPLatexRender } = await import('./render/useJPLatexRender')
+    const { result } = renderHook(() => useJPLatexRender('jp1'))
+
+    await act(async () => {})
+    expect(result.current.metadata?.status).toBe('completed')
+    expect(mockApi.getResumeMetadata).toHaveBeenCalledWith('jp1')
+  })
+
+  it('ignores 404 metadata on mount', async () => {
+    mockApi.getResumeMetadata.mockRejectedValueOnce(new HttpError('Not found', 404))
+
+    const { useJPLatexRender } = await import('./render/useJPLatexRender')
+    const { result } = renderHook(() => useJPLatexRender('jp1'))
+
+    await act(async () => {})
+
+    expect(result.current.metadata).toBeNull()
+    expect(result.current.error).toBeNull()
+  })
+
+  it('triggers render once and updates completed metadata', async () => {
+    mockApi.getResumeMetadata.mockRejectedValueOnce(new HttpError('Not found', 404))
+    mockApi.triggerRender.mockResolvedValueOnce(completedMeta)
 
     const { useJPLatexRender } = await import('./render/useJPLatexRender')
     const { result } = renderHook(() => useJPLatexRender('jp1'))
 
     await act(async () => { await result.current.triggerRender() })
-    expect(result.current.isRendering).toBe(true)
-    expect(result.current.metadata?.status).toBe('pending')
-
-    // Advance timer to trigger first poll
-    await act(async () => { vi.advanceTimersByTime(3000) })
-    await act(async () => {})
-
-    // Advance again for second poll -> completed
-    await act(async () => { vi.advanceTimersByTime(3000) })
-    await act(async () => {})
-
     expect(result.current.isRendering).toBe(false)
     expect(result.current.metadata?.status).toBe('completed')
+    expect(mockApi.triggerRender).toHaveBeenCalledTimes(1)
   })
 
-  it('stops polling on failed status', async () => {
-    mockApi.triggerRender.mockResolvedValueOnce(pendingMeta)
-    mockApi.getResumeMetadata.mockResolvedValueOnce(failedMeta)
+  it('blocks duplicate trigger calls while rendering', async () => {
+    mockApi.getResumeMetadata.mockRejectedValueOnce(new HttpError('Not found', 404))
+    let resolveRender: ((value: typeof completedMeta) => void) | null = null
+    mockApi.triggerRender.mockImplementation(
+      () => new Promise<typeof completedMeta>((resolve) => { resolveRender = resolve }),
+    )
 
     const { useJPLatexRender } = await import('./render/useJPLatexRender')
     const { result } = renderHook(() => useJPLatexRender('jp1'))
 
-    await act(async () => { await result.current.triggerRender() })
-    await act(async () => { vi.advanceTimersByTime(3000) })
-    await act(async () => {})
-
-    expect(result.current.isRendering).toBe(false)
-    expect(result.current.metadata?.status).toBe('failed')
-  })
-
-  it('times out after MAX_RETRIES polls', async () => {
-    mockApi.triggerRender.mockResolvedValueOnce(pendingMeta)
-    mockApi.getResumeMetadata.mockResolvedValue(pendingMeta)
-
-    const { useJPLatexRender } = await import('./render/useJPLatexRender')
-    const { result } = renderHook(() => useJPLatexRender('jp1'))
-
-    await act(async () => { await result.current.triggerRender() })
-
-    // Advance past MAX_RETRIES (20 * 3000ms = 60000ms)
-    for (let i = 0; i < 21; i++) {
-      await act(async () => { vi.advanceTimersByTime(3000) })
-      await act(async () => {})
-    }
-
-    expect(result.current.timedOut).toBe(true)
-    expect(result.current.isRendering).toBe(false)
+    await act(async () => {
+      const first = result.current.triggerRender()
+      const second = result.current.triggerRender()
+      await Promise.resolve()
+      expect(mockApi.triggerRender).toHaveBeenCalledTimes(1)
+      resolveRender?.(completedMeta)
+      await Promise.all([first, second])
+    })
   })
 
   it('sets error on render trigger failure', async () => {
+    mockApi.getResumeMetadata.mockRejectedValueOnce(new HttpError('Not found', 404))
     mockApi.triggerRender.mockRejectedValueOnce(new HttpError('Server error', 500))
 
     const { useJPLatexRender } = await import('./render/useJPLatexRender')
@@ -98,6 +101,7 @@ describe('useJPLatexRender', () => {
 
     expect(result.current.error).toBe('Server error')
     expect(result.current.isRendering).toBe(false)
+    expect(result.current.timedOut).toBe(false)
   })
 
   it('downloadPdf creates a blob URL and triggers download', async () => {

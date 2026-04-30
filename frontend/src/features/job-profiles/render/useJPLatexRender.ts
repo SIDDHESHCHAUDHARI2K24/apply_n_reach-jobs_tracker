@@ -1,16 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { jobProfileApi } from '@features/job-profiles/jobProfileApi'
 import { HttpError } from '@core/http/client'
-import type { ResumeMetadata, RenderStatus } from '@features/job-profiles/types'
-
-const TERMINAL_STATES: RenderStatus[] = ['completed', 'failed']
-const POLL_INTERVAL_MS = 3000
-const MAX_RETRIES = 20  // ~60s
+import type { ResumeMetadata } from '@features/job-profiles/types'
 
 interface RenderState {
   metadata: ResumeMetadata | null
   isRendering: boolean
-  isPolling: boolean
   error: string | null
   timedOut: boolean
 }
@@ -19,56 +14,45 @@ export function useJPLatexRender(jobProfileId: string) {
   const [state, setState] = useState<RenderState>({
     metadata: null,
     isRendering: false,
-    isPolling: false,
     error: null,
     timedOut: false,
   })
-  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const retryCountRef = useRef(0)
+  const isRenderingRef = useRef(false)
 
   const stopPolling = useCallback(() => {
-    if (pollTimeoutRef.current) {
-      clearTimeout(pollTimeoutRef.current)
-      pollTimeoutRef.current = null
-    }
-    setState(s => ({ ...s, isPolling: false }))
+    // Manual job-profile render is synchronous; kept for API compatibility with RenderPanel.
+    return
   }, [])
 
-  const pollMetadata = useCallback(async () => {
-    if (retryCountRef.current >= MAX_RETRIES) {
-      stopPolling()
-      setState(s => ({ ...s, timedOut: true, isRendering: false }))
+  const loadMetadata = useCallback(async () => {
+    try {
+      const meta = await jobProfileApi.getResumeMetadata(jobProfileId)
+      setState(s => ({ ...s, metadata: meta, error: null }))
+    } catch (err) {
+      if (err instanceof HttpError && err.status === 404) {
+        setState(s => ({ ...s, metadata: null }))
+        return
+      }
+      setState(s => ({ ...s, error: err instanceof HttpError ? err.message : 'Failed to load render metadata' }))
+    }
+  }, [jobProfileId])
+
+  const triggerRender = useCallback(async () => {
+    if (isRenderingRef.current) {
       return
     }
 
-    try {
-      const meta = await jobProfileApi.getResumeMetadata(jobProfileId)
-      setState(s => ({ ...s, metadata: meta }))
-
-      if (TERMINAL_STATES.includes(meta.status)) {
-        stopPolling()
-        setState(s => ({ ...s, isRendering: false }))
-      } else {
-        retryCountRef.current += 1
-        pollTimeoutRef.current = setTimeout(pollMetadata, POLL_INTERVAL_MS)
-      }
-    } catch (err) {
-      stopPolling()
-      setState(s => ({ ...s, isRendering: false, error: err instanceof HttpError ? err.message : 'Render poll failed' }))
-    }
-  }, [jobProfileId, stopPolling])
-
-  const triggerRender = useCallback(async () => {
+    isRenderingRef.current = true
     setState(s => ({ ...s, isRendering: true, error: null, timedOut: false }))
-    retryCountRef.current = 0
     try {
       const meta = await jobProfileApi.triggerRender(jobProfileId)
-      setState(s => ({ ...s, metadata: meta, isPolling: true }))
-      pollTimeoutRef.current = setTimeout(pollMetadata, POLL_INTERVAL_MS)
+      setState(s => ({ ...s, metadata: meta, isRendering: false }))
     } catch (err) {
       setState(s => ({ ...s, isRendering: false, error: err instanceof HttpError ? err.message : 'Failed to start render' }))
+    } finally {
+      isRenderingRef.current = false
     }
-  }, [jobProfileId, pollMetadata])
+  }, [jobProfileId])
 
   const downloadPdf = useCallback(async () => {
     try {
@@ -97,8 +81,8 @@ export function useJPLatexRender(jobProfileId: string) {
   }, [jobProfileId])
 
   useEffect(() => {
-    return () => { stopPolling() }
-  }, [stopPolling])
+    void loadMetadata()
+  }, [loadMetadata])
 
   return { ...state, triggerRender, stopPolling, downloadPdf, openPdfInTab }
 }

@@ -1,5 +1,6 @@
 """Pydantic schemas for the latex_resume sub-feature."""
 from datetime import datetime
+from typing import Literal
 from pydantic import field_validator, model_validator
 from app.features.core.base_model import BaseSchema
 
@@ -50,6 +51,10 @@ class RenderResumeRequest(BaseSchema):
 
 class RenderedResumeResponse(BaseSchema):
     job_profile_id: int
+    status: Literal["completed"] = "completed"
     template_name: str
     rendered_at: datetime
     layout_json: dict
+    error_message: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None

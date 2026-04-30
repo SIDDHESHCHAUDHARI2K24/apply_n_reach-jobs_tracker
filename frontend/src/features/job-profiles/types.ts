@@ -53,11 +53,12 @@ export type RenderStatus = 'pending' | 'processing' | 'completed' | 'failed'
 export interface ResumeMetadata {
   job_profile_id: string
   status: RenderStatus
-  latex_source: string | null
-  pdf_url: string | null
+  template_name: string
+  rendered_at: string
+  layout_json: Record<string, unknown>
   error_message: string | null
-  created_at: string
-  updated_at: string
+  created_at: string | null
+  updated_at: string | null
 }
 
 export interface ImportResult {
