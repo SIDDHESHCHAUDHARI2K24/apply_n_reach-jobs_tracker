@@ -68,19 +68,15 @@ export function CertList() {
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold text-slate-800 text-sm leading-snug">{item.name}</p>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
-                    {item.issuing_organization && (
-                      <span className="text-slate-500 text-sm">{item.issuing_organization}</span>
-                    )}
-                    {item.issue_date && (
-                      <span className="text-slate-400 text-xs">Issued {item.issue_date}</span>
-                    )}
-                    {item.expiry_date && (
-                      <span className="text-slate-400 text-xs">· Expires {item.expiry_date}</span>
-                    )}
-                  </div>
-                  {item.credential_id && (
-                    <p className="text-slate-400 text-xs mt-0.5">ID: {item.credential_id}</p>
+                  {item.credential_url && (
+                    <a
+                      href={item.credential_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sky-500 text-xs hover:underline mt-0.5 inline-block"
+                    >
+                      View credential
+                    </a>
                   )}
                 </div>
               </div>

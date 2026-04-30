@@ -29,6 +29,7 @@ export interface Education {
   end_date: string | null
   gpa: string | null
   bullet_points: string[]
+  reference_links?: string[]
   created_at: string
   updated_at: string
 }
@@ -42,6 +43,7 @@ export interface Experience {
   start_date: string | null
   end_date: string | null
   is_current: boolean
+  context: string | null
   bullet_points: string[]
   created_at: string
   updated_at: string
@@ -56,7 +58,6 @@ export interface Project {
   url: string | null
   start_date: string | null
   end_date: string | null
-  bullet_points: string[]
   created_at: string
   updated_at: string
 }
@@ -65,13 +66,10 @@ export interface Research {
   id: string
   profile_id: string
   title: string
-  institution: string | null
   journal: string | null
   year: string | null
   description: string | null
   url: string | null
-  bullet_points: string[]
-  reference_links: string[]
   created_at: string
   updated_at: string
 }
@@ -80,15 +78,12 @@ export interface Certification {
   id: string
   profile_id: string
   name: string
-  issuing_organization: string | null
-  issue_date: string | null
-  expiry_date: string | null
-  credential_id: string | null
   credential_url: string | null
   created_at: string
   updated_at: string
 }
 
 export interface SkillsData {
-  skills: string[]
+  technical: string[]
+  competency: string[]
 }

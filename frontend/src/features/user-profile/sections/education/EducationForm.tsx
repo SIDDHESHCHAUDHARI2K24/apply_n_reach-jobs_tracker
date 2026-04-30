@@ -7,7 +7,7 @@ type FormFields = {
   field_of_study: string
   start_date: string
   end_date: string
-  gpa: string
+  referenceLink: string
   bullet_points: string
 }
 
@@ -18,7 +18,7 @@ function toForm(item?: Education): FormFields {
     field_of_study: item?.field_of_study ?? '',
     start_date: item?.start_date ?? '',
     end_date: item?.end_date ?? '',
-    gpa: item?.gpa ?? '',
+    referenceLink: item?.reference_links?.[0] ?? '',
     bullet_points: item?.bullet_points.join('\n') ?? '',
   }
 }
@@ -30,8 +30,9 @@ function fromForm(form: FormFields): Omit<Education, 'id' | 'profile_id' | 'crea
     field_of_study: form.field_of_study || null,
     start_date: form.start_date || null,
     end_date: form.end_date || null,
-    gpa: form.gpa || null,
+    gpa: null,
     bullet_points: form.bullet_points ? form.bullet_points.split('\n').filter(l => l.trim()) : [],
+    reference_links: form.referenceLink ? [form.referenceLink] : [],
   }
 }
 
@@ -78,19 +79,17 @@ export function EducationForm({ initial, isSaving, onSave, onCancel }: Props) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Start Date</label>
-          <input name="start_date" value={form.start_date} onChange={handleChange} placeholder="YYYY-MM-DD" className={inputClass} />
+          <input name="start_date" value={form.start_date} onChange={handleChange} placeholder="MM/YYYY" className={inputClass} />
         </div>
         <div>
           <label className={labelClass}>End Date</label>
-          <input name="end_date" value={form.end_date} onChange={handleChange} placeholder="YYYY-MM-DD" className={inputClass} />
+          <input name="end_date" value={form.end_date} onChange={handleChange} placeholder="MM/YYYY" className={inputClass} />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className={labelClass}>GPA</label>
-          <input name="gpa" value={form.gpa} onChange={handleChange} className={inputClass} />
-        </div>
+      <div>
+        <label className={labelClass}>Reference Link (optional)</label>
+        <input name="referenceLink" type="url" value={form.referenceLink} onChange={handleChange} placeholder="https://..." className={inputClass} />
       </div>
 
       <div>

@@ -1,5 +1,7 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+'use client'
+
+import { Fragment, useState } from 'react'
+import Link from 'next/link'
 import { Clock, FileText, Pencil, Trash2 } from 'lucide-react'
 import { useJobOpenings } from './useJobOpenings'
 import { StatusHistoryDrawer } from './StatusHistoryDrawer'
@@ -149,7 +151,7 @@ export function JobTrackerTable() {
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr style={{ background: '#f8fafc' }}>
+            <tr className="bg-slate-50">
               {['Company', 'Role', 'Status', 'URL', 'Added', 'Updated', 'Actions'].map(h => (
                 <th
                   key={h}
@@ -162,9 +164,16 @@ export function JobTrackerTable() {
           </thead>
           <tbody>
             {openings.map(opening => (
-              <>
-                <tr key={opening.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-slate-800">{opening.company}</td>
+              <Fragment key={opening.id}>
+                <tr className="hover:bg-slate-50 transition-colors">
+                  <td className="px-4 py-3 text-sm font-medium text-slate-800">
+                    <Link
+                      href={`/job-tracker/${opening.id}`}
+                      className="hover:text-sky-600 hover:underline transition-colors"
+                    >
+                      {opening.company}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-sm text-slate-700">{opening.role}</td>
                   <td className="px-4 py-3">
                     <select
@@ -200,7 +209,7 @@ export function JobTrackerTable() {
                         <Clock className="w-4 h-4" />
                       </button>
                       <Link
-                        to={`/job-openings/${opening.id}/resume`}
+                        href={`/job-openings/${opening.id}/resume`}
                         title="Resume"
                         className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
                       >
@@ -229,7 +238,7 @@ export function JobTrackerTable() {
                   </td>
                 </tr>
                 {editingId === opening.id && (
-                  <tr key={`${opening.id}-edit`}>
+                  <tr>
                     <td colSpan={7} className="px-4 py-3 bg-sky-50 border-y border-sky-100">
                       <form onSubmit={e => handleUpdate(opening.id, e)} className="flex flex-wrap gap-2 items-center">
                         <input
@@ -270,7 +279,7 @@ export function JobTrackerTable() {
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>

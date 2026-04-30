@@ -38,12 +38,12 @@ function mapPersonal(response: UserProfilePersonalResponse): PersonalDetails {
     profile_id: toStringId(response.profile_id),
     full_name: response.full_name ?? null,
     email: response.email ?? null,
-    phone: null,
-    location: null,
+    phone: (response as any).phone ?? null,
+    location: (response as any).location ?? null,
     linkedin_url: response.linkedin_url ?? null,
     github_url: response.github_url ?? null,
     portfolio_url: response.portfolio_url ?? null,
-    summary: null,
+    summary: (response as any).summary ?? null,
     created_at: '',
     updated_at: '',
   }
@@ -75,6 +75,7 @@ function mapExperience(response: UserProfileExperienceResponse): Experience {
     start_date: response.start_month_year,
     end_date: response.end_month_year ?? null,
     is_current: !response.end_month_year,
+    context: (response as any).context ?? null,
     bullet_points: response.bullet_points ?? [],
     created_at: response.created_at,
     updated_at: response.updated_at,
@@ -87,11 +88,10 @@ function mapProject(response: UserProfileProjectResponse): Project {
     profile_id: toStringId(response.profile_id),
     title: response.project_name,
     description: response.description ?? null,
-    technologies: [],
+    technologies: (response as any).technologies ?? [],
     url: response.reference_links?.[0] ?? null,
     start_date: response.start_month_year,
     end_date: response.end_month_year ?? null,
-    bullet_points: [],
     created_at: response.created_at,
     updated_at: response.updated_at,
   }
@@ -102,13 +102,10 @@ function mapResearch(response: UserProfileResearchResponse): Research {
     id: toStringId(response.id),
     profile_id: toStringId(response.profile_id),
     title: response.paper_name,
-    institution: null,
-    journal: null,
-    year: null,
+    journal: (response as any).journal ?? null,
+    year: (response as any).year ?? null,
     description: response.description ?? null,
     url: response.publication_link,
-    bullet_points: [],
-    reference_links: [],
     created_at: response.created_at,
     updated_at: response.updated_at,
   }
@@ -119,18 +116,10 @@ function mapCertification(response: UserProfileCertificationResponse): Certifica
     id: toStringId(response.id),
     profile_id: toStringId(response.profile_id),
     name: response.certification_name,
-    issuing_organization: null,
-    issue_date: null,
-    expiry_date: null,
-    credential_id: null,
     credential_url: response.verification_link,
     created_at: response.created_at,
     updated_at: response.updated_at,
   }
-}
-
-export interface SkillsData {
-  skills: string[]
 }
 
 export const profileApi = {
@@ -148,12 +137,15 @@ export const profileApi = {
   },
 
   updatePersonal: async (data: Partial<Omit<PersonalDetails, 'id' | 'profile_id' | 'created_at' | 'updated_at'>>) => {
-    const payload: UserProfilePersonalUpdate = {
+    const payload: any = {
       full_name: data.full_name ?? undefined,
       email: data.email ?? undefined,
       linkedin_url: data.linkedin_url ?? undefined,
       github_url: data.github_url ?? undefined,
       portfolio_url: data.portfolio_url ?? undefined,
+      location: data.location ?? undefined,
+      summary: data.summary ?? undefined,
+      phone: data.phone ?? undefined,
     }
     const response = await apiRequest<UserProfilePersonalResponse>('/profile/personal', { method: 'PATCH', body: payload })
     return mapPersonal(response)
@@ -208,7 +200,7 @@ export const profileApi = {
       location: data.location ?? null,
       start_month_year: data.start_date ?? '',
       end_month_year: data.end_date ?? null,
-      context: '',
+      context: (data as any).context ?? undefined,
       work_sample_links: [],
       bullet_points: data.bullet_points ?? [],
     }
@@ -223,6 +215,7 @@ export const profileApi = {
       location: data.location ?? undefined,
       start_month_year: data.start_date ?? undefined,
       end_month_year: data.end_date ?? undefined,
+      context: (data as any).context ?? undefined,
       bullet_points: data.bullet_points ?? undefined,
     }
     const response = await apiRequest<UserProfileExperienceResponse>(`/profile/experience/${id}`, { method: 'PATCH', body: payload })
@@ -245,6 +238,7 @@ export const profileApi = {
       start_month_year: data.start_date ?? '',
       end_month_year: data.end_date ?? null,
       reference_links: data.url ? [data.url] : [],
+      technologies: (data as any).technologies ?? [],
     }
     const response = await apiRequest<UserProfileProjectResponse>('/profile/projects', { method: 'POST', body: payload })
     return mapProject(response)
@@ -257,6 +251,7 @@ export const profileApi = {
       start_month_year: data.start_date ?? undefined,
       end_month_year: data.end_date ?? undefined,
       reference_links: data.url ? [data.url] : undefined,
+      technologies: (data as any).technologies ?? [],
     }
     const response = await apiRequest<UserProfileProjectResponse>(`/profile/projects/${id}`, { method: 'PATCH', body: payload })
     return mapProject(response)
@@ -276,6 +271,8 @@ export const profileApi = {
       paper_name: data.title,
       publication_link: data.url ?? '',
       description: data.description ?? null,
+      journal: (data as any).journal ?? undefined,
+      year: (data as any).year ?? undefined,
     }
     const response = await apiRequest<UserProfileResearchResponse>('/profile/research', { method: 'POST', body: payload })
     return mapResearch(response)
@@ -286,6 +283,8 @@ export const profileApi = {
       paper_name: data.title ?? undefined,
       publication_link: data.url ?? undefined,
       description: data.description ?? undefined,
+      journal: (data as any).journal ?? undefined,
+      year: (data as any).year ?? undefined,
     }
     const response = await apiRequest<UserProfileResearchResponse>(`/profile/research/${id}`, { method: 'PATCH', body: payload })
     return mapResearch(response)
@@ -324,18 +323,23 @@ export const profileApi = {
   // Skills
   getSkills: async () => {
     const rows = await apiRequest<UserProfileSkillItemResponse[]>('/profile/skills')
-    return { skills: rows.map(row => row.name) }
+    return {
+      technical: rows.filter(r => r.kind === 'technical').map(r => r.name),
+      competency: rows.filter(r => (r.kind as string) === 'competency').map(r => r.name),
+    }
   },
 
-  updateSkills: async (skills: string[]) => {
+  updateSkills: async (skills: { technical: string[]; competency: string[] }) => {
     const payload: UserProfileSkillsUpdate = {
-      skills: skills.map((name, index) => ({
-        kind: 'technical',
-        name,
-        sort_order: index,
-      })),
+      skills: [
+        ...skills.technical.map((name, i) => ({ kind: 'technical' as const, name, sort_order: i })),
+        ...skills.competency.map((name, i) => ({ kind: 'competency' as const, name, sort_order: i })),
+      ],
     }
     const rows = await apiRequest<UserProfileSkillItemResponse[]>('/profile/skills', { method: 'PATCH', body: payload })
-    return { skills: rows.map(row => row.name) }
+    return {
+      technical: rows.filter(r => r.kind === 'technical').map(r => r.name),
+      competency: rows.filter(r => (r.kind as string) === 'competency').map(r => r.name),
+    }
   },
 }

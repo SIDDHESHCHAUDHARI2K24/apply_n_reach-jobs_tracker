@@ -7,7 +7,7 @@ type FormFields = {
   location: string
   start_date: string
   end_date: string
-  is_current: boolean
+  context: string
   bullet_points: string
 }
 
@@ -18,7 +18,7 @@ function toForm(item?: Experience): FormFields {
     location: item?.location ?? '',
     start_date: item?.start_date ?? '',
     end_date: item?.end_date ?? '',
-    is_current: item?.is_current ?? false,
+    context: item?.context ?? '',
     bullet_points: item?.bullet_points.join('\n') ?? '',
   }
 }
@@ -30,7 +30,8 @@ function fromForm(form: FormFields): Omit<Experience, 'id' | 'profile_id' | 'cre
     location: form.location || null,
     start_date: form.start_date || null,
     end_date: form.end_date || null,
-    is_current: form.is_current,
+    is_current: false,
+    context: form.context || null,
     bullet_points: form.bullet_points ? form.bullet_points.split('\n').filter(l => l.trim()) : [],
   }
 }
@@ -49,9 +50,7 @@ export function ExperienceForm({ initial, isSaving, onSave, onCancel }: Props) {
   const [form, setForm] = useState<FormFields>(toForm(initial))
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    const { name, value, type } = e.target
-    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined
-    setForm(f => ({ ...f, [name]: type === 'checkbox' ? checked : value }))
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -80,24 +79,19 @@ export function ExperienceForm({ initial, isSaving, onSave, onCancel }: Props) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Start Date</label>
-          <input name="start_date" value={form.start_date} onChange={handleChange} placeholder="YYYY-MM-DD" className={inputClass} />
+          <input name="start_date" value={form.start_date} onChange={handleChange} placeholder="MM/YYYY" className={inputClass} />
         </div>
         <div>
           <label className={labelClass}>End Date</label>
-          <input name="end_date" value={form.end_date} onChange={handleChange} placeholder="YYYY-MM-DD" className={inputClass} />
+          <input name="end_date" value={form.end_date} onChange={handleChange} placeholder="MM/YYYY" className={inputClass} />
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-        <input
-          name="is_current"
-          type="checkbox"
-          checked={form.is_current}
-          onChange={handleChange}
-          className="h-4 w-4 rounded border-slate-300 text-sky-500 focus:ring-sky-500"
-        />
-        Currently working here
-      </label>
+      <div>
+        <label className={labelClass}>Job Description / Context</label>
+        <textarea name="context" value={form.context} onChange={handleChange} rows={5} maxLength={10000} placeholder="Describe the role, team, and work context..." className={`${inputClass} resize-none`} />
+        <p className="text-xs text-slate-400 mt-1 text-right">{form.context.length} / 10,000</p>
+      </div>
 
       <div>
         <label className={labelClass}>Bullet Points (one per line)</label>
