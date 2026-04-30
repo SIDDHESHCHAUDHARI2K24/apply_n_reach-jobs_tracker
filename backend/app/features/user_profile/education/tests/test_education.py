@@ -129,6 +129,16 @@ def test_html_in_bullet_points_stripped(authenticated_client):
     assert resp.json()["bullet_points"] == ["Important achievement"]
 
 
+def test_two_reference_links_returns_422(authenticated_client):
+    """POST with more than one reference link returns 422."""
+    client, _ = authenticated_client
+    _create_profile(client)
+    resp = client.post("/profile/education", json=_edu_payload(
+        reference_links=["https://example.com/a", "https://example.com/b"],
+    ))
+    assert resp.status_code == 422
+
+
 def test_unauthenticated_returns_401(client):
     resp = client.get("/profile/education")
     assert resp.status_code == 401
