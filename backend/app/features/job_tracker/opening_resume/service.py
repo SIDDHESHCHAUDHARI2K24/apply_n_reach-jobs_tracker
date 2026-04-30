@@ -109,7 +109,7 @@ async def create_opening_resume(
             """
             INSERT INTO job_opening_experience
                 (resume_id, company, title, location, start_date, end_date, is_current, description, display_order)
-            SELECT $1, company_name, role_title, NULL, start_month_year, end_month_year,
+            SELECT $1, company_name, role_title, location, start_month_year, end_month_year,
                    (end_month_year IS NULL), context, 0
             FROM job_profile_experiences
             WHERE job_profile_id=$2

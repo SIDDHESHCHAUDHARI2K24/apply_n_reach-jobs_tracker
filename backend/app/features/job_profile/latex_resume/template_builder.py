@@ -267,15 +267,11 @@ def _build_experience(experiences: list[dict]) -> str:
         start = exp.get("start_month_year") or ""
         end = exp.get("end_month_year") or "Present"
         date_range = f"{latex_escape(start)} -- {latex_escape(end)}" if start else latex_escape(end)
-        context = exp.get("context") or ""
+        location = latex_escape(exp.get("location") or "")
 
         parts.append(
-            rf"  \resumeSubheading{{{company}}}{{{date_range}}}{{{role}}}{{}}"
+            rf"  \resumeSubheading{{{company}}}{{{date_range}}}{{{role}}}{{{location}}}"
         )
-
-        # Optional context intro line
-        if context and context.strip():
-            parts.append(rf"  \small{{{latex_escape(context)}}}")
 
         bullets = [b for b in (exp.get("bullet_points") or []) if b and b.strip()]
         work_links = [u for u in (exp.get("work_sample_links") or []) if u and u.strip()]

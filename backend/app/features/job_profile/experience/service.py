@@ -54,13 +54,14 @@ async def add_experience(
     await models.ensure_jp_experience_schema(conn)
     row = await conn.fetchrow(
         "INSERT INTO job_profile_experiences "
-        "(job_profile_id, source_experience_id, role_title, company_name, "
+        "(job_profile_id, source_experience_id, role_title, company_name, location, "
         "start_month_year, end_month_year, context, work_sample_links, bullet_points) "
-        "VALUES ($1, NULL, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb) "
+        "VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb) "
         "RETURNING *",
         job_profile_id,
         data.role_title,
         data.company_name,
+        data.location,
         data.start_month_year,
         data.end_month_year,
         data.context,
@@ -188,14 +189,15 @@ async def import_experiences_from_profile(
 
             inserted = await conn.fetchrow(
                 "INSERT INTO job_profile_experiences "
-                "(job_profile_id, source_experience_id, role_title, company_name, "
+                "(job_profile_id, source_experience_id, role_title, company_name, location, "
                 "start_month_year, end_month_year, context, work_sample_links, bullet_points) "
-                "VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb) "
+                "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb) "
                 "RETURNING id",
                 job_profile_id,
                 row["id"],
                 row["role_title"],
                 row["company_name"],
+                row["location"],
                 row["start_month_year"],
                 row["end_month_year"],
                 row["context"],

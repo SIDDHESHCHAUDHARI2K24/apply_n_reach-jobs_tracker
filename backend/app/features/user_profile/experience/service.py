@@ -13,7 +13,7 @@ async def list_experiences(conn: asyncpg.Connection, profile_id: int) -> list[as
     """List all experience entries for a profile, ordered by start_month_year DESC."""
     await models.ensure_experience_schema(conn)
     return await conn.fetch(
-        "SELECT id, profile_id, role_title, company_name, "
+        "SELECT id, profile_id, role_title, company_name, location, "
         "start_month_year, end_month_year, context, work_sample_links, bullet_points, "
         "created_at, updated_at FROM experiences WHERE profile_id = $1 "
         "ORDER BY start_month_year DESC",
@@ -27,7 +27,7 @@ async def get_experience(
     """Fetch a single experience entry, verifying ownership."""
     await models.ensure_experience_schema(conn)
     row = await conn.fetchrow(
-        "SELECT id, profile_id, role_title, company_name, "
+        "SELECT id, profile_id, role_title, company_name, location, "
         "start_month_year, end_month_year, context, work_sample_links, bullet_points, "
         "created_at, updated_at FROM experiences WHERE id = $1 AND profile_id = $2",
         experience_id,
@@ -44,15 +44,16 @@ async def add_experience(
     """Create a new experience entry for a profile."""
     await models.ensure_experience_schema(conn)
     return await conn.fetchrow(
-        "INSERT INTO experiences (profile_id, role_title, company_name, "
+        "INSERT INTO experiences (profile_id, role_title, company_name, location, "
         "start_month_year, end_month_year, context, work_sample_links, bullet_points) "
-        "VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb) "
-        "RETURNING id, profile_id, role_title, company_name, "
+        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb) "
+        "RETURNING id, profile_id, role_title, company_name, location, "
         "start_month_year, end_month_year, context, work_sample_links, bullet_points, "
         "created_at, updated_at",
         profile_id,
         data.role_title,
         data.company_name,
+        data.location,
         data.start_month_year,
         data.end_month_year,
         data.context,
