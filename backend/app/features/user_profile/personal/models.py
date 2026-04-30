@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS personal_details (
     linkedin_url TEXT NOT NULL,
     github_url TEXT,
     portfolio_url TEXT,
+    summary TEXT,
+    location TEXT,
+    phone TEXT,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 """
@@ -30,7 +33,9 @@ async def ensure_profile_schema(conn: asyncpg.Connection) -> None:
     """Create user_profiles and personal_details tables if they do not exist."""
     await conn.execute(USER_PROFILES_TABLE_SQL)
     await conn.execute(PERSONAL_DETAILS_TABLE_SQL)
-    # Add updated_at column if it doesn't exist (migration for existing tables)
+    await conn.execute("ALTER TABLE personal_details ADD COLUMN IF NOT EXISTS summary TEXT")
+    await conn.execute("ALTER TABLE personal_details ADD COLUMN IF NOT EXISTS location TEXT")
+    await conn.execute("ALTER TABLE personal_details ADD COLUMN IF NOT EXISTS phone TEXT")
     await conn.execute(
         """
         DO $$

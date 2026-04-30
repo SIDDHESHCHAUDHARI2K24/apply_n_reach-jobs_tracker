@@ -49,6 +49,28 @@ class PersonalDetailsCreate(BaseSchema):
         """Strip HTML from portfolio_url."""
         return sanitize_text(v, max_length=2048)
 
+    summary: Optional[str] = None
+    location: Optional[str] = None
+    phone: Optional[str] = None
+
+    @field_validator("summary", mode="before")
+    @classmethod
+    def sanitize_summary(cls, v: Optional[str]) -> Optional[str]:
+        """Strip HTML and enforce 5000 char limit on summary."""
+        return sanitize_text(v, max_length=5000)
+
+    @field_validator("location", mode="before")
+    @classmethod
+    def sanitize_location(cls, v: Optional[str]) -> Optional[str]:
+        """Strip HTML and enforce 255 char limit on location."""
+        return sanitize_text(v, max_length=255)
+
+    @field_validator("phone", mode="before")
+    @classmethod
+    def sanitize_phone(cls, v: Optional[str]) -> Optional[str]:
+        """Strip HTML and enforce 50 char limit on phone."""
+        return sanitize_text(v, max_length=50)
+
 
 class PersonalDetailsUpdate(BaseSchema):
     """Request schema for partial PATCH /profile/personal (all fields optional)."""
@@ -98,6 +120,9 @@ class PersonalDetailsResponse(BaseSchema):
     linkedin_url: str
     github_url: Optional[str] = None
     portfolio_url: Optional[str] = None
+    summary: Optional[str] = None
+    location: Optional[str] = None
+    phone: Optional[str] = None
 
 
 class ProfileSummaryResponse(BaseSchema):

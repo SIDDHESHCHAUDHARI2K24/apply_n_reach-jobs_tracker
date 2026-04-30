@@ -48,7 +48,8 @@ async def get_personal_details(conn: asyncpg.Connection, profile_id: int) -> asy
     """
     await models.ensure_profile_schema(conn)
     return await conn.fetchrow(
-        "SELECT id, profile_id, full_name, email, linkedin_url, github_url, portfolio_url "
+        "SELECT id, profile_id, full_name, email, linkedin_url, github_url, portfolio_url, "
+        "summary, location, phone "
         "FROM personal_details WHERE profile_id = $1",
         profile_id,
     )
@@ -94,16 +95,19 @@ async def upsert_personal_details(
     await models.ensure_profile_schema(conn)
     return await conn.fetchrow(
         """
-        INSERT INTO personal_details (profile_id, full_name, email, linkedin_url, github_url, portfolio_url)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO personal_details (profile_id, full_name, email, linkedin_url, github_url, portfolio_url, summary, location, phone)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         ON CONFLICT (profile_id) DO UPDATE SET
             full_name = EXCLUDED.full_name,
             email = EXCLUDED.email,
             linkedin_url = EXCLUDED.linkedin_url,
             github_url = EXCLUDED.github_url,
             portfolio_url = EXCLUDED.portfolio_url,
+            summary = EXCLUDED.summary,
+            location = EXCLUDED.location,
+            phone = EXCLUDED.phone,
             updated_at = NOW()
-        RETURNING id, profile_id, full_name, email, linkedin_url, github_url, portfolio_url
+        RETURNING id, profile_id, full_name, email, linkedin_url, github_url, portfolio_url, summary, location, phone
         """,
         profile_id,
         data.full_name,
@@ -111,6 +115,9 @@ async def upsert_personal_details(
         data.linkedin_url,
         data.github_url,
         data.portfolio_url,
+        data.summary,
+        data.location,
+        data.phone,
     )
 
 

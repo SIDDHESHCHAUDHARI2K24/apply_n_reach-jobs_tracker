@@ -68,6 +68,9 @@ async def get_personal(
         linkedin_url=row["linkedin_url"],
         github_url=row["github_url"],
         portfolio_url=row["portfolio_url"],
+        summary=row["summary"],
+        location=row["location"],
+        phone=row["phone"],
     )
 
 
@@ -121,6 +124,9 @@ async def update_personal_details(
         linkedin_url=row["linkedin_url"],
         github_url=row["github_url"],
         portfolio_url=row["portfolio_url"],
+        summary=row["summary"],
+        location=row["location"],
+        phone=row["phone"],
     )
 
 
