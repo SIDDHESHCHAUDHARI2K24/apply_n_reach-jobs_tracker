@@ -320,11 +320,15 @@ def _build_projects(projects: list[dict]) -> str:
 
         description = proj.get("description") or ""
         ref_links = [u for u in (proj.get("reference_links") or []) if u and u.strip()]
+        technologies = [t for t in (proj.get("technologies") or []) if t and t.strip()]
 
-        if description and description.strip() or ref_links:
+        if description and description.strip() or ref_links or technologies:
             parts.append(r"  \resumeItemListStart")
             if description and description.strip():
                 parts.append(rf"    \resumeItem{{{latex_escape(description)}}}")
+            if technologies:
+                tech_str = ", ".join(latex_escape(t) for t in technologies)
+                parts.append(rf"    \resumeItem{{Technologies: {tech_str}}}")
             if ref_links:
                 link_strs = []
                 for url in ref_links:
@@ -354,8 +358,16 @@ def _build_research(researches: list[dict]) -> str:
         paper_name = latex_escape(res.get("paper_name") or "")
         pub_link_raw = res.get("publication_link") or ""
         description = res.get("description") or ""
+        journal = latex_escape(res.get("journal") or "")
+        year = latex_escape(res.get("year") or "")
+        pub_info = " | ".join(filter(None, [journal, year]))
 
-        parts.append(rf"  \resumeProjectHeading{{\textbf{{{paper_name}}}}}{{}}")
+        if pub_info:
+            heading_text = rf"\textbf{{{paper_name}}} \textit{{\small{{{pub_info}}}}}"
+        else:
+            heading_text = rf"\textbf{{{paper_name}}}"
+
+        parts.append(rf"  \resumeProjectHeading{{{heading_text}}}{{}}")
 
         bullets: list[str] = []
         if pub_link_raw and pub_link_raw.strip():
