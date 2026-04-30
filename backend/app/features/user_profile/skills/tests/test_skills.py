@@ -50,16 +50,12 @@ def test_patch_skills_full_replace(authenticated_client):
     assert "Python" not in names
 
 
-def test_patch_skills_clear_all(authenticated_client):
-    """PATCH with empty list clears all skills."""
+def test_patch_skills_empty_list_returns_422(authenticated_client):
+    """PATCH with empty skills list returns 422 — at least one skill required."""
     client, _ = authenticated_client
     _create_profile(client)
-    client.patch("/profile/skills", json={"skills": [
-        {"kind": "technical", "name": "Python", "sort_order": 0},
-    ]})
     resp = client.patch("/profile/skills", json={"skills": []})
-    assert resp.status_code == 200
-    assert resp.json() == []
+    assert resp.status_code == 422
 
 
 def test_get_skill_by_id(authenticated_client):

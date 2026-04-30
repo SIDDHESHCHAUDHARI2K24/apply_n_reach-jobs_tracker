@@ -2,7 +2,7 @@
 from typing import Literal, Optional
 from datetime import datetime
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 
 from app.features.core.base_model import BaseSchema
 from app.features.user_profile.validators import sanitize_text
@@ -26,6 +26,12 @@ class SkillsUpdate(BaseSchema):
     """Request body for PATCH /profile/skills — replaces the full skill set."""
 
     skills: list[SkillItemCreate] = []
+
+    @model_validator(mode="after")
+    def require_at_least_one_skill(self):
+        if not self.skills:
+            raise ValueError("At least one skill is required")
+        return self
 
 
 class SkillItemResponse(BaseSchema):
