@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, status
 from app.features.core.dependencies import DbDep
 from app.features.user_profile.dependencies import get_profile_or_404
 from app.features.user_profile.certifications import service
-from app.features.user_profile.certifications.schemas import CertificationCreate, CertificationResponse
+from app.features.user_profile.certifications.schemas import CertificationCreate, CertificationResponse, CertificationUpdate
 
 router = APIRouter(prefix="/profile/certifications", tags=["user-profile"])
 
@@ -50,11 +50,11 @@ async def add_certification(
 @router.patch("/{certification_id}", response_model=CertificationResponse)
 async def update_certification(
     certification_id: int,
-    data: CertificationCreate,
+    data: CertificationUpdate,
     profile: asyncpg.Record = Depends(get_profile_or_404),
     conn: asyncpg.Connection = DbDep,
 ) -> CertificationResponse:
-    """Update an existing certification entry."""
+    """Partially update an existing certification entry."""
     row = await service.update_certification(conn, profile["id"], certification_id, data)
     return _row_to_response(row)
 

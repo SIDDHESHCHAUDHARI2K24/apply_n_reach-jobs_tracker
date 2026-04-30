@@ -50,6 +50,44 @@ class PersonalDetailsCreate(BaseSchema):
         return sanitize_text(v, max_length=2048)
 
 
+class PersonalDetailsUpdate(BaseSchema):
+    """Request schema for partial PATCH /profile/personal (all fields optional)."""
+
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    linkedin_url: Optional[str] = None
+    github_url: Optional[str] = None
+    portfolio_url: Optional[str] = None
+
+    @field_validator("full_name", mode="before")
+    @classmethod
+    def sanitize_full_name(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=255)
+
+    @field_validator("linkedin_url", mode="before")
+    @classmethod
+    def sanitize_linkedin_url(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=2048)
+
+    @field_validator("github_url", mode="before")
+    @classmethod
+    def sanitize_github_url(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=2048)
+
+    @field_validator("portfolio_url", mode="before")
+    @classmethod
+    def sanitize_portfolio_url(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=2048)
+
+
 class PersonalDetailsResponse(BaseSchema):
     """Response schema for GET /profile/personal and PATCH /profile/personal."""
 
@@ -60,3 +98,15 @@ class PersonalDetailsResponse(BaseSchema):
     linkedin_url: str
     github_url: Optional[str] = None
     portfolio_url: Optional[str] = None
+
+
+class ProfileSummaryResponse(BaseSchema):
+    """Response schema for GET /profile/summary."""
+
+    personal_details_exists: bool
+    education_count: int
+    experience_count: int
+    projects_count: int
+    research_count: int
+    certifications_count: int
+    skills_count: int

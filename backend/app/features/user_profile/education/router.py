@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, status
 from app.features.core.dependencies import DbDep
 from app.features.user_profile.dependencies import get_profile_or_404
 from app.features.user_profile.education import service
-from app.features.user_profile.education.schemas import EducationCreate, EducationResponse
+from app.features.user_profile.education.schemas import EducationCreate, EducationResponse, EducationUpdate
 
 router = APIRouter(prefix="/profile/education", tags=["user-profile"])
 
@@ -55,11 +55,11 @@ async def add_education(
 @router.patch("/{education_id}", response_model=EducationResponse)
 async def update_education(
     education_id: int,
-    data: EducationCreate,
+    data: EducationUpdate,
     profile: asyncpg.Record = Depends(get_profile_or_404),
     conn: asyncpg.Connection = DbDep,
 ) -> EducationResponse:
-    """Update an existing education entry."""
+    """Partially update an existing education entry."""
     row = await service.update_education(conn, profile["id"], education_id, data)
     return _row_to_response(row)
 

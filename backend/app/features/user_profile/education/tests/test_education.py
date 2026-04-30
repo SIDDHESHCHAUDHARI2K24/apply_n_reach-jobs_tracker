@@ -132,3 +132,26 @@ def test_html_in_bullet_points_stripped(authenticated_client):
 def test_unauthenticated_returns_401(client):
     resp = client.get("/profile/education")
     assert resp.status_code == 401
+
+
+def test_partial_update_single_field(authenticated_client):
+    client, _ = authenticated_client
+    _create_profile(client)
+    edu_resp = client.post("/profile/education", json=_edu_payload())
+    edu_id = edu_resp.json()["id"]
+
+    resp = client.patch(f"/profile/education/{edu_id}", json={"major": "Physics"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["major"] == "Physics"
+    assert data["university_name"] == "MIT"  # unchanged
+    assert data["bullet_points"] == ["Graduated with honors"]  # unchanged
+
+
+def test_partial_update_empty_body_400(authenticated_client):
+    client, _ = authenticated_client
+    _create_profile(client)
+    edu_resp = client.post("/profile/education", json=_edu_payload())
+    edu_id = edu_resp.json()["id"]
+    resp = client.patch(f"/profile/education/{edu_id}", json={})
+    assert resp.status_code == 400

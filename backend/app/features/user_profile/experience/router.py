@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, status
 from app.features.core.dependencies import DbDep
 from app.features.user_profile.dependencies import get_profile_or_404
 from app.features.user_profile.experience import service
-from app.features.user_profile.experience.schemas import ExperienceCreate, ExperienceResponse
+from app.features.user_profile.experience.schemas import ExperienceCreate, ExperienceResponse, ExperienceUpdate
 
 # TODO: Register `experience_router` in app/app.py
 router = APIRouter(prefix="/profile/experience", tags=["user-profile"])
@@ -56,11 +56,11 @@ async def add_experience(
 @router.patch("/{experience_id}", response_model=ExperienceResponse)
 async def update_experience(
     experience_id: int,
-    data: ExperienceCreate,
+    data: ExperienceUpdate,
     profile: asyncpg.Record = Depends(get_profile_or_404),
     conn: asyncpg.Connection = DbDep,
 ) -> ExperienceResponse:
-    """Update an existing experience entry."""
+    """Partially update an existing experience entry."""
     row = await service.update_experience(conn, profile["id"], experience_id, data)
     return _row_to_response(row)
 

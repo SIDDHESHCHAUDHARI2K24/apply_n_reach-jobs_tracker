@@ -152,3 +152,24 @@ def test_context_too_long_returns_422(authenticated_client):
 def test_unauthenticated_returns_401(client):
     resp = client.get("/profile/experience")
     assert resp.status_code == 401
+
+
+def test_partial_update_single_field(authenticated_client):
+    client, _ = authenticated_client
+    _create_profile(client)
+    created = client.post("/profile/experience", json=_exp_payload()).json()
+    exp_id = created["id"]
+
+    resp = client.patch(f"/profile/experience/{exp_id}", json={"role_title": "Senior Engineer"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["role_title"] == "Senior Engineer"
+    assert data["company_name"] == "Acme Corp"  # unchanged
+
+
+def test_partial_update_empty_body_400(authenticated_client):
+    client, _ = authenticated_client
+    _create_profile(client)
+    created = client.post("/profile/experience", json=_exp_payload()).json()
+    resp = client.patch(f"/profile/experience/{created['id']}", json={})
+    assert resp.status_code == 400

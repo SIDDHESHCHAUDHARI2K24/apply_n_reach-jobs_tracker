@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, status
 from app.features.core.dependencies import DbDep
 from app.features.user_profile.dependencies import get_profile_or_404
 from app.features.user_profile.projects import service
-from app.features.user_profile.projects.schemas import ProjectCreate, ProjectResponse
+from app.features.user_profile.projects.schemas import ProjectCreate, ProjectResponse, ProjectUpdate
 
 router = APIRouter(prefix="/profile/projects", tags=["user-profile"])
 
@@ -55,11 +55,11 @@ async def add_project(
 @router.patch("/{project_id}", response_model=ProjectResponse)
 async def update_project(
     project_id: int,
-    data: ProjectCreate,
+    data: ProjectUpdate,
     profile: asyncpg.Record = Depends(get_profile_or_404),
     conn: asyncpg.Connection = DbDep,
 ) -> ProjectResponse:
-    """Update an existing project entry."""
+    """Partially update an existing project entry."""
     row = await service.update_project(conn, profile["id"], project_id, data)
     return _row_to_response(row)
 

@@ -3,8 +3,10 @@ import json
 import asyncpg
 from fastapi import HTTPException, status
 
+from app.features.core.query_helpers import build_partial_update_query
 from app.features.user_profile.education import models
-from app.features.user_profile.education.schemas import EducationCreate
+from app.features.user_profile.education.schemas import EducationCreate, EducationUpdate
+from app.features.user_profile.education.schemas import _parse_month_year
 
 
 async def list_educations(conn: asyncpg.Connection, profile_id: int) -> list[asyncpg.Record]:
@@ -60,28 +62,36 @@ async def add_education(
 
 
 async def update_education(
-    conn: asyncpg.Connection, profile_id: int, education_id: int, data: EducationCreate
+    conn: asyncpg.Connection, profile_id: int, education_id: int, data: EducationUpdate
 ) -> asyncpg.Record:
-    """Update an existing education entry, verifying ownership."""
+    """Partially update an existing education entry, verifying ownership."""
     await models.ensure_education_schema(conn)
-    row = await conn.fetchrow(
-        "UPDATE educations SET university_name=$1, major=$2, degree_type=$3, "
-        "start_month_year=$4, end_month_year=$5, bullet_points=$6::jsonb, "
-        "reference_links=$7::jsonb, updated_at=NOW() "
-        "WHERE id=$8 AND profile_id=$9 "
-        "RETURNING id, profile_id, university_name, major, degree_type, "
-        "start_month_year, end_month_year, bullet_points, reference_links, "
-        "created_at, updated_at",
-        data.university_name,
-        data.major,
-        data.degree_type,
-        data.start_month_year,
-        data.end_month_year,
-        json.dumps(data.bullet_points),
-        json.dumps(data.reference_links),
-        education_id,
-        profile_id,
+    updates = data.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    # Cross-validate dates when only one is provided
+    has_start = "start_month_year" in updates
+    has_end = "end_month_year" in updates
+    if has_start ^ has_end:
+        existing = await conn.fetchrow(
+            "SELECT start_month_year, end_month_year FROM educations WHERE id=$1 AND profile_id=$2",
+            education_id, profile_id
+        )
+        if existing:
+            start = updates.get("start_month_year") or existing["start_month_year"]
+            end = updates.get("end_month_year") or existing["end_month_year"]
+            if end and start:
+                if _parse_month_year(end) < _parse_month_year(start):
+                    raise HTTPException(status_code=422, detail="end_month_year must be >= start_month_year")
+
+    query, params = build_partial_update_query(
+        "educations",
+        {"id": education_id, "profile_id": profile_id},
+        updates,
+        jsonb_fields={"bullet_points", "reference_links"}
     )
+    row = await conn.fetchrow(query, *params)
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Education entry not found")
     return row
