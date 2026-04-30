@@ -15,6 +15,25 @@ from app.features.job_profile.personal.schemas import (
 router = APIRouter(prefix="/job-profiles/{job_profile_id}/personal", tags=["job-profile"])
 
 
+def _row_to_response(row: asyncpg.Record) -> JPPersonalDetailsResponse:
+    """Map the DB row explicitly so parity fields are preserved in responses."""
+    return JPPersonalDetailsResponse(
+        id=row["id"],
+        job_profile_id=row["job_profile_id"],
+        source_personal_id=row["source_personal_id"],
+        full_name=row["full_name"],
+        email=row["email"],
+        linkedin_url=row["linkedin_url"],
+        github_url=row["github_url"],
+        portfolio_url=row["portfolio_url"],
+        summary=row["summary"],
+        location=row["location"],
+        phone=row["phone"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
 @router.get("", response_model=JPPersonalDetailsResponse)
 async def get_personal(
     job_profile: asyncpg.Record = Depends(get_job_profile_or_404),
@@ -27,7 +46,7 @@ async def get_personal(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Personal details not found",
         )
-    return JPPersonalDetailsResponse(**dict(row))
+    return _row_to_response(row)
 
 
 @router.patch("", response_model=JPPersonalDetailsResponse)
@@ -48,6 +67,9 @@ async def update_personal(
                 linkedin_url=data.linkedin_url,
                 github_url=data.github_url,
                 portfolio_url=data.portfolio_url,
+                summary=data.summary,
+                location=data.location,
+                phone=data.phone,
             )
             row = await service.upsert_personal_details(conn, job_profile["id"], create_data)
         else:
@@ -57,7 +79,7 @@ async def update_personal(
             )
     else:
         row = await service.update_personal_details(conn, job_profile["id"], data)
-    return JPPersonalDetailsResponse(**dict(row))
+    return _row_to_response(row)
 
 
 @router.post("/import", response_model=JPPersonalDetailsResponse, status_code=200)
@@ -68,4 +90,4 @@ async def import_personal(
 ) -> JPPersonalDetailsResponse:
     """Import personal details from the user's master profile into this job profile."""
     row = await service.import_personal_from_profile(conn, job_profile["id"], current_user["id"])
-    return JPPersonalDetailsResponse(**dict(row))
+    return _row_to_response(row)

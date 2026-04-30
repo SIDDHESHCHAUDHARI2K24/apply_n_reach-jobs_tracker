@@ -1,11 +1,11 @@
+'use client'
+
 import React, { useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { Trash2, Plus } from 'lucide-react'
 import { useORProjects } from '@features/opening-resume/sections/useORProjects'
 
-export default function ORProjectsPage() {
-  const { openingId } = useParams<{ openingId: string }>()
-  const { items, isLoading, isSaving, error, create, remove } = useORProjects(openingId ?? '')
+export default function ORProjectsPage({ openingId }: { openingId: string }) {
+  const { items, isLoading, isSaving, error, create, remove } = useORProjects(openingId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ title: '' })
 
@@ -20,7 +20,15 @@ export default function ORProjectsPage() {
     e.preventDefault()
     if (!form.title.trim()) return
     try {
-      await create({ title: form.title.trim(), description: null, technologies: [], url: null, bullet_points: [] })
+      await create({
+        title: form.title.trim(),
+        description: null,
+        technologies: [],
+        url: null,
+        start_date: null,
+        end_date: null,
+        display_order: items.length,
+      })
       setForm({ title: '' })
       setShowForm(false)
     } catch { /* error shown by hook */ }

@@ -24,6 +24,7 @@ from app.features.user_profile.projects.router import router as projects_router
 from app.features.user_profile.research.router import router as research_router
 from app.features.user_profile.certifications.router import router as certifications_router
 from app.features.user_profile.skills.router import router as skills_router
+from app.features.user_profile.linkedin_import.router import router as linkedin_import_router
 from app.features.job_profile.core.router import router as jp_core_router
 from app.features.job_profile.personal.router import router as jp_personal_router
 from app.features.job_profile.education.router import router as jp_education_router
@@ -37,6 +38,7 @@ from app.features.job_tracker.openings_core.router import router as jt_openings_
 from app.features.job_tracker.opening_ingestion.router import router as jt_ingestion_router
 from app.features.job_tracker.opening_ingestion.service import startup_stale_run_cleanup
 from app.features.job_tracker.opening_resume.router import router as jt_resume_router
+from app.features.job_tracker.opening_resume.latex_resume.router import router as jt_resume_latex_router
 from app.features.job_tracker.opening_resume.personal.router import router as jt_resume_personal_router
 from app.features.job_tracker.opening_resume.education.router import router as jt_resume_education_router
 from app.features.job_tracker.opening_resume.experience.router import router as jt_resume_experience_router
@@ -44,6 +46,7 @@ from app.features.job_tracker.opening_resume.projects.router import router as jt
 from app.features.job_tracker.opening_resume.research.router import router as jt_resume_research_router
 from app.features.job_tracker.opening_resume.certifications.router import router as jt_resume_certifications_router
 from app.features.job_tracker.opening_resume.skills.router import router as jt_resume_skills_router
+from app.features.job_tracker.agents.router import router as jt_agent_router
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +57,27 @@ async def lifespan(app: FastAPI):
     try:
         async with get_db() as conn:
             await startup_stale_run_cleanup(conn)
+            # Mark stale agent runs as failed on startup
+            await conn.execute(
+                """
+                UPDATE job_opening_agent_runs
+                SET status='failed', completed_at=NOW(),
+                    error_message='Marked failed on startup: run was stale (server restart)'
+                WHERE status='running'
+                  AND started_at < NOW() - INTERVAL '5 minutes'
+                """
+            )
+            await conn.execute(
+                """
+                UPDATE job_openings SET agent_status='failed'
+                WHERE agent_status='running'
+                  AND id IN (
+                    SELECT opening_id FROM job_opening_agent_runs
+                    WHERE status='failed'
+                      AND error_message LIKE 'Marked failed on startup%'
+                  )
+                """
+            )
     except Exception:
         logger.warning("Startup stale run cleanup failed; continuing startup", exc_info=True)
     yield
@@ -103,6 +127,7 @@ def create_app() -> FastAPI:
     app.include_router(research_router)
     app.include_router(certifications_router)
     app.include_router(skills_router)
+    app.include_router(linkedin_import_router)
 
     # Job profile routers.
     app.include_router(jp_core_router)
@@ -119,6 +144,7 @@ def create_app() -> FastAPI:
     app.include_router(jt_openings_router)
     app.include_router(jt_ingestion_router)
     app.include_router(jt_resume_router)
+    app.include_router(jt_resume_latex_router)
     app.include_router(jt_resume_personal_router)
     app.include_router(jt_resume_education_router)
     app.include_router(jt_resume_experience_router)
@@ -126,5 +152,8 @@ def create_app() -> FastAPI:
     app.include_router(jt_resume_research_router)
     app.include_router(jt_resume_certifications_router)
     app.include_router(jt_resume_skills_router)
+
+    # Resume agent router.
+    app.include_router(jt_agent_router)
 
     return app

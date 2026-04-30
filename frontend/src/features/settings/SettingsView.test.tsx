@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
 import { SettingsView } from './SettingsView'
 import * as authContext from '@core/auth/context'
 import * as httpClient from '@core/http/client'
+
+const mockReplace = vi.fn()
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: mockReplace }),
+}))
 
 vi.mock('@core/auth/context', async (importOriginal) => {
   const actual = await importOriginal<typeof authContext>()
@@ -20,6 +25,7 @@ const mockClearUser = vi.fn()
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mockReplace.mockReset()
   ;(authContext.useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
     user: mockUser, isLoading: false, error: null, refetch: vi.fn(), clearUser: mockClearUser,
   })
@@ -27,7 +33,7 @@ beforeEach(() => {
 })
 
 function renderView() {
-  return render(<MemoryRouter><SettingsView /></MemoryRouter>)
+  return render(<SettingsView />)
 }
 
 describe('SettingsView', () => {

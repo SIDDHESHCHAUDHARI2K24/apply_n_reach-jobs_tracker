@@ -19,6 +19,9 @@ from app.features.job_tracker.opening_resume.projects.router import router as pr
 from app.features.job_tracker.opening_resume.research.router import router as research_router
 from app.features.job_tracker.opening_resume.certifications.router import router as certifications_router
 from app.features.job_tracker.opening_resume.skills.router import router as skills_router
+from app.features.job_tracker.opening_resume.latex_resume.router import (
+    router as latex_resume_router,
+)
 from app.features.job_tracker.opening_resume.service import create_opening_resume
 
 
@@ -34,6 +37,7 @@ def make_app():
     app.include_router(research_router)
     app.include_router(certifications_router)
     app.include_router(skills_router)
+    app.include_router(latex_resume_router)
     return app
 
 

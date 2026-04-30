@@ -19,3 +19,9 @@ CREATE TABLE IF NOT EXISTS job_profile_researches (
 async def ensure_jp_research_schema(conn: asyncpg.Connection) -> None:
     """Create the job_profile_researches table if it does not exist."""
     await conn.execute(CREATE_JP_RESEARCHES_TABLE)
+    await conn.execute(
+        "ALTER TABLE job_profile_researches ADD COLUMN IF NOT EXISTS journal TEXT"
+    )
+    await conn.execute(
+        "ALTER TABLE job_profile_researches ADD COLUMN IF NOT EXISTS year TEXT"
+    )

@@ -74,22 +74,35 @@ async def get_extracted_details(
     """Get the most recent succeeded extraction snapshot for a job opening."""
     row = await get_latest_extracted_details(conn, current_user["id"], opening_id)
 
-    # Handle JSONB fields
-    required_skills = row["required_skills"]
-    preferred_skills = row["preferred_skills"]
-    if isinstance(required_skills, str):
-        required_skills = json.loads(required_skills)
-    if isinstance(preferred_skills, str):
-        preferred_skills = json.loads(preferred_skills)
+    # Handle JSONB fields (asyncpg returns str from RETURNING; plain SELECT returns list/dict)
+    def _parse_jsonb_list(val):
+        return json.loads(val) if isinstance(val, str) else val
+
+    required_skills = _parse_jsonb_list(row["required_skills"])
+    preferred_skills = _parse_jsonb_list(row["preferred_skills"])
+    technical_keywords = _parse_jsonb_list(row["technical_keywords"])
+    sector_keywords = _parse_jsonb_list(row["sector_keywords"])
+    business_sectors = _parse_jsonb_list(row["business_sectors"])
+    useful_experiences = _parse_jsonb_list(row["useful_experiences"])
+
+    jsonb_list_fields = {
+        "required_skills", "preferred_skills",
+        "technical_keywords", "sector_keywords",
+        "business_sectors", "useful_experiences",
+    }
 
     return ExtractedDetailsResponse(
         **{
             k: v
             for k, v in dict(row).items()
-            if k not in ("required_skills", "preferred_skills", "id", "version_id")
+            if k not in jsonb_list_fields | {"id", "version_id"}
         },
         required_skills=required_skills,
         preferred_skills=preferred_skills,
+        technical_keywords=technical_keywords,
+        sector_keywords=sector_keywords,
+        business_sectors=business_sectors,
+        useful_experiences=useful_experiences,
         extraction_run_id=row["run_id"],
     )
 

@@ -1,11 +1,11 @@
+'use client'
+
 import React, { useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { Trash2, Plus } from 'lucide-react'
 import { useORExperience } from '@features/opening-resume/sections/useORExperience'
 
-export default function ORExperiencePage() {
-  const { openingId } = useParams<{ openingId: string }>()
-  const { items, isLoading, isSaving, error, create, remove } = useORExperience(openingId ?? '')
+export default function ORExperiencePage({ openingId }: { openingId: string }) {
+  const { items, isLoading, isSaving, error, create, remove } = useORExperience(openingId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ company: '', title: '' })
 
@@ -20,7 +20,16 @@ export default function ORExperiencePage() {
     e.preventDefault()
     if (!form.company.trim() || !form.title.trim()) return
     try {
-      await create({ company: form.company.trim(), title: form.title.trim(), location: null, start_date: null, end_date: null, is_current: false, bullet_points: [] })
+      await create({
+        company: form.company.trim(),
+        title: form.title.trim(),
+        location: null,
+        start_date: null,
+        end_date: null,
+        is_current: false,
+        description: null,
+        display_order: items.length,
+      })
       setForm({ company: '', title: '' })
       setShowForm(false)
     } catch { /* error shown by hook */ }

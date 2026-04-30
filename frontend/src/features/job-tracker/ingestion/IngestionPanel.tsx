@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Clock, Loader2, XC
 import { useIngestion } from './useIngestion'
 
 export function IngestionPanel() {
-  const { isRefreshing, isInFlight, latestDetails, runs, error, refresh, loadRuns } = useIngestion()
+  const { isRefreshing, isInFlight, latestDetails, runs, error, selectedOpeningId, refresh, loadRuns, setOpeningId } = useIngestion()
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -53,10 +53,20 @@ export function IngestionPanel() {
           )}
 
           {/* Action buttons */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-slate-600">Opening ID</label>
+            <input
+              value={selectedOpeningId ?? ''}
+              onChange={event => setOpeningId(event.target.value.trim())}
+              placeholder="Enter opening id for extraction"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none"
+            />
+          </div>
+
           <div className="flex gap-2">
             <button
               onClick={refresh}
-              disabled={isRefreshing || isInFlight}
+              disabled={isRefreshing || isInFlight || !selectedOpeningId}
               className="px-4 py-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
             >
               {isRefreshing ? 'Starting extraction...' : 'Refresh / Extract New'}

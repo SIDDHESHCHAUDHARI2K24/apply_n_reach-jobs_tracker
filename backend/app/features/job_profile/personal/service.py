@@ -29,14 +29,18 @@ async def upsert_personal_details(
     return await conn.fetchrow(
         """
         INSERT INTO job_profile_personal_details
-          (job_profile_id, full_name, email, linkedin_url, github_url, portfolio_url)
-        VALUES ($1, $2, $3, $4, $5, $6)
+          (job_profile_id, full_name, email, linkedin_url, github_url, portfolio_url,
+           summary, location, phone)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         ON CONFLICT (job_profile_id) DO UPDATE SET
           full_name = EXCLUDED.full_name,
           email = EXCLUDED.email,
           linkedin_url = EXCLUDED.linkedin_url,
           github_url = EXCLUDED.github_url,
           portfolio_url = EXCLUDED.portfolio_url,
+          summary = EXCLUDED.summary,
+          location = EXCLUDED.location,
+          phone = EXCLUDED.phone,
           updated_at = NOW()
         RETURNING *
         """,
@@ -46,6 +50,9 @@ async def upsert_personal_details(
         data.linkedin_url,
         data.github_url,
         data.portfolio_url,
+        data.summary,
+        data.location,
+        data.phone,
     )
 
 
@@ -99,8 +106,8 @@ async def import_personal_from_profile(
         """
         INSERT INTO job_profile_personal_details
           (job_profile_id, source_personal_id, full_name, email, linkedin_url,
-           github_url, portfolio_url)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+           github_url, portfolio_url, summary, location, phone)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (job_profile_id) DO UPDATE SET
           source_personal_id = EXCLUDED.source_personal_id,
           full_name = EXCLUDED.full_name,
@@ -108,6 +115,9 @@ async def import_personal_from_profile(
           linkedin_url = EXCLUDED.linkedin_url,
           github_url = EXCLUDED.github_url,
           portfolio_url = EXCLUDED.portfolio_url,
+          summary = EXCLUDED.summary,
+          location = EXCLUDED.location,
+          phone = EXCLUDED.phone,
           updated_at = NOW()
         RETURNING *
         """,
@@ -116,6 +126,9 @@ async def import_personal_from_profile(
         master["full_name"],
         master["email"],
         master["linkedin_url"],
-        master["github_url"],
-        master["portfolio_url"],
+        master.get("github_url"),
+        master.get("portfolio_url"),
+        master.get("summary"),
+        master.get("location"),
+        master.get("phone"),
     )

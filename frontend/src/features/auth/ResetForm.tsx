@@ -1,5 +1,7 @@
+'use client'
+
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useResetForm } from './useAuthForms'
 
@@ -28,7 +30,7 @@ export function ResetForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="bg-white rounded-xl shadow-sm p-8">
-      <h1 className="font-['Sora'] text-2xl font-bold text-slate-900 mb-2">Reset password</h1>
+      <h1 className="font-sora text-2xl font-bold text-slate-900 mb-2">Reset password</h1>
       <p className="text-slate-500 text-sm mb-6">Enter your email and a new password to regain access.</p>
 
       {displayError && (
@@ -92,7 +94,7 @@ export function ResetForm() {
       </button>
 
       <p className="mt-5 text-center text-sm text-slate-500">
-        <Link to="/auth/login" className="text-sky-600 hover:underline font-medium">
+        <Link href="/auth/login" className="text-sky-600 hover:underline font-medium">
           Back to sign in
         </Link>
       </p>

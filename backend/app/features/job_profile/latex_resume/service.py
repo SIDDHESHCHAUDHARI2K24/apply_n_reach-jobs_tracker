@@ -45,7 +45,7 @@ async def aggregate_job_profile_data(
 
     # Experience
     exp_rows = await conn.fetch(
-        "SELECT role_title, company_name, start_month_year, end_month_year, "
+        "SELECT role_title, company_name, location, start_month_year, end_month_year, "
         "context, work_sample_links, bullet_points "
         "FROM job_profile_experiences WHERE job_profile_id = $1 ORDER BY start_month_year DESC",
         job_profile_id,

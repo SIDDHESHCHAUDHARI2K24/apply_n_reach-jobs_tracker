@@ -169,3 +169,58 @@ class TestImportPersonal:
         # No master personal details created
         resp = client.post(f"/job-profiles/{jp['id']}/personal/import")
         assert resp.status_code == 404
+
+
+class TestB5Parity:
+    """B5 parity tests: summary, location, phone fields on JP personal."""
+
+    def _create_full_personal(self, client, jp_id, **overrides):
+        payload = {
+            "full_name": "Alice Smith",
+            "email": "alice@example.com",
+            "linkedin_url": "https://linkedin.com/in/alice",
+            **overrides,
+        }
+        resp = client.patch(f"/job-profiles/{jp_id}/personal", json=payload)
+        assert resp.status_code == 200
+        return resp.json()
+
+    def test_summary_field_roundtrip(self, authenticated_client):
+        """B5: summary is stored and returned correctly."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        data = self._create_full_personal(client, jp["id"], summary="Experienced developer")
+        assert data["summary"] == "Experienced developer"
+
+    def test_location_field_roundtrip(self, authenticated_client):
+        """B5: location is stored and returned correctly."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        data = self._create_full_personal(client, jp["id"], location="San Francisco, CA")
+        assert data["location"] == "San Francisco, CA"
+
+    def test_phone_field_roundtrip(self, authenticated_client):
+        """B5: phone is stored and returned correctly."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        data = self._create_full_personal(client, jp["id"], phone="+1-555-0100")
+        assert data["phone"] == "+1-555-0100"
+
+    def test_parity_fields_default_null(self, authenticated_client):
+        """B5: summary/location/phone default to null when not provided."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        data = self._create_full_personal(client, jp["id"])
+        assert data["summary"] is None
+        assert data["location"] is None
+        assert data["phone"] is None
+
+    def test_html_stripped_from_summary(self, authenticated_client):
+        """B5: HTML tags in summary are stripped by sanitize_text."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        data = self._create_full_personal(
+            client, jp["id"], summary="<b>Experienced</b> developer"
+        )
+        assert "<b>" not in data["summary"]
+        assert "Experienced" in data["summary"]

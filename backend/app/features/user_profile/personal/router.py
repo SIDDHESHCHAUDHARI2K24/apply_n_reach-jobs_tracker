@@ -107,6 +107,9 @@ async def update_personal_details(
                 linkedin_url=data.linkedin_url,
                 github_url=data.github_url,
                 portfolio_url=data.portfolio_url,
+                summary=data.summary,
+                location=data.location,
+                phone=data.phone,
             )
             row = await service.upsert_personal_details(conn, profile["id"], create_data)
         else:

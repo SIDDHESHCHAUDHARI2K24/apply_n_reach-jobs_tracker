@@ -1,11 +1,11 @@
+'use client'
+
 import React, { useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { Trash2, Plus } from 'lucide-react'
 import { useOREducation } from '@features/opening-resume/sections/useOREducation'
 
-export default function OREducationPage() {
-  const { openingId } = useParams<{ openingId: string }>()
-  const { items, isLoading, isSaving, error, create, remove } = useOREducation(openingId ?? '')
+export default function OREducationPage({ openingId }: { openingId: string }) {
+  const { items, isLoading, isSaving, error, create, remove } = useOREducation(openingId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ institution: '', degree: '' })
 
@@ -20,7 +20,16 @@ export default function OREducationPage() {
     e.preventDefault()
     if (!form.institution.trim() || !form.degree.trim()) return
     try {
-      await create({ institution: form.institution.trim(), degree: form.degree.trim(), field_of_study: null, start_date: null, end_date: null, gpa: null, bullet_points: [] })
+      await create({
+        institution: form.institution.trim(),
+        degree: form.degree.trim(),
+        field_of_study: null,
+        start_date: null,
+        end_date: null,
+        gpa: null,
+        description: null,
+        display_order: items.length,
+      })
       setForm({ institution: '', degree: '' })
       setShowForm(false)
     } catch { /* error shown by hook */ }

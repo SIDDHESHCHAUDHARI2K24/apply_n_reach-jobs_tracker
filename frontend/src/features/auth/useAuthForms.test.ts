@@ -1,9 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import React from 'react'
-import { MemoryRouter } from 'react-router-dom'
 import * as authContext from '@core/auth/context'
 import * as authApiModule from './authApi'
+
+const mockReplace = vi.fn()
+const mockSearchParams = new URLSearchParams()
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: mockReplace }),
+  useSearchParams: () => mockSearchParams,
+}))
 
 vi.mock('@core/auth/context', async (importOriginal) => {
   const actual = await importOriginal<typeof authContext>()
@@ -28,6 +35,8 @@ const mockClearUser = vi.fn()
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mockReplace.mockReset()
+  mockSearchParams.delete('returnTo')
   ;(authContext.useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
     user: null,
     isLoading: false,
@@ -38,7 +47,7 @@ beforeEach(() => {
 })
 
 function wrapper({ children }: { children: React.ReactNode }) {
-  return React.createElement(MemoryRouter, { initialEntries: ['/auth/login'] }, children)
+  return React.createElement(React.Fragment, null, children)
 }
 
 describe('useLoginForm', () => {

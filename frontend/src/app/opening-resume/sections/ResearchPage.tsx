@@ -1,11 +1,11 @@
+'use client'
+
 import React, { useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { Trash2, Plus } from 'lucide-react'
 import { useORResearch } from '@features/opening-resume/sections/useORResearch'
 
-export default function ORResearchPage() {
-  const { openingId } = useParams<{ openingId: string }>()
-  const { items, isLoading, isSaving, error, create, remove } = useORResearch(openingId ?? '')
+export default function ORResearchPage({ openingId }: { openingId: string }) {
+  const { items, isLoading, isSaving, error, create, remove } = useORResearch(openingId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ title: '' })
 
@@ -20,7 +20,14 @@ export default function ORResearchPage() {
     e.preventDefault()
     if (!form.title.trim()) return
     try {
-      await create({ title: form.title.trim(), institution: null, journal: null, year: null, description: null, url: null, bullet_points: [], reference_links: [] })
+      await create({
+        title: form.title.trim(),
+        publication: null,
+        published_date: null,
+        description: null,
+        url: null,
+        display_order: items.length,
+      })
       setForm({ title: '' })
       setShowForm(false)
     } catch { /* error shown by hook */ }

@@ -45,6 +45,12 @@ class ExtractedDetailsResponse(BaseSchema):
     application_deadline: str | None = None
     extractor_model: str | None = None
     source_url: str | None = None
+    role_summary: str | None = None
+    technical_keywords: list[str] | None = None
+    sector_keywords: list[str] | None = None
+    business_sectors: list[str] | None = None
+    problem_being_solved: str | None = None
+    useful_experiences: list[str] | None = None
     # Provenance
     extraction_run_id: int
     opening_id: int

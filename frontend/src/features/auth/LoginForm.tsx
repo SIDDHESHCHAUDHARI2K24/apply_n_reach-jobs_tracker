@@ -1,5 +1,7 @@
+'use client'
+
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import { AlertCircle } from 'lucide-react'
 import { useLoginForm } from './useAuthForms'
 
@@ -28,7 +30,7 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="bg-white rounded-xl shadow-sm p-8">
-      <h1 className="font-['Sora'] text-2xl font-bold text-slate-900 mb-2">Sign in</h1>
+      <h1 className="font-sora text-2xl font-bold text-slate-900 mb-2">Sign in</h1>
       <p className="text-slate-500 text-sm mb-6">Welcome back — enter your details below.</p>
 
       {displayError && (
@@ -82,11 +84,11 @@ export function LoginForm() {
       </button>
 
       <p className="mt-5 text-center text-sm text-slate-500">
-        <Link to="/auth/register" className="text-sky-600 hover:underline font-medium">
+        <Link href="/auth/register" className="text-sky-600 hover:underline font-medium">
           Create account
         </Link>
         <span className="mx-2 text-slate-300">·</span>
-        <Link to="/auth/reset" className="text-sky-600 hover:underline font-medium">
+        <Link href="/auth/reset" className="text-sky-600 hover:underline font-medium">
           Forgot password?
         </Link>
       </p>

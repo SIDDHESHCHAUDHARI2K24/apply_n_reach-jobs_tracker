@@ -21,6 +21,8 @@ def _row_to_response(row: asyncpg.Record) -> JPProjectResponse:
     d = dict(row)
     if isinstance(d.get("reference_links"), str):
         d["reference_links"] = json.loads(d["reference_links"])
+    if isinstance(d.get("technologies"), str):
+        d["technologies"] = json.loads(d["technologies"])
     return JPProjectResponse(**d)
 
 

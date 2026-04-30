@@ -151,6 +151,8 @@ class EducationUpdate(BaseSchema):
             return None
         if not isinstance(v, list):
             raise ValueError("reference_links must be a list")
+        if len(v) > 1:
+            raise ValueError("Only one reference link allowed per entry")
         return [sanitize_text(str(item), max_length=2048) for item in v]
 
     @model_validator(mode="after")

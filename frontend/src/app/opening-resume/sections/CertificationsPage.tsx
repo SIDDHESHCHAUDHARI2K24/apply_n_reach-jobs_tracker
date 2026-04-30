@@ -1,11 +1,11 @@
+'use client'
+
 import React, { useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { Trash2, Plus } from 'lucide-react'
 import { useORCertifications } from '@features/opening-resume/sections/useORCertifications'
 
-export default function ORCertificationsPage() {
-  const { openingId } = useParams<{ openingId: string }>()
-  const { items, isLoading, isSaving, error, create, remove } = useORCertifications(openingId ?? '')
+export default function ORCertificationsPage({ openingId }: { openingId: string }) {
+  const { items, isLoading, isSaving, error, create, remove } = useORCertifications(openingId)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '' })
 
@@ -20,7 +20,15 @@ export default function ORCertificationsPage() {
     e.preventDefault()
     if (!form.name.trim()) return
     try {
-      await create({ name: form.name.trim(), issuing_organization: null, issue_date: null, expiry_date: null, credential_id: null, credential_url: null })
+      await create({
+        name: form.name.trim(),
+        issuing_organization: null,
+        issue_date: null,
+        expiry_date: null,
+        credential_id: null,
+        credential_url: null,
+        display_order: items.length,
+      })
       setForm({ name: '' })
       setShowForm(false)
     } catch { /* error shown by hook */ }

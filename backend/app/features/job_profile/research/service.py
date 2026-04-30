@@ -49,12 +49,14 @@ async def add_research(
     await models.ensure_jp_research_schema(conn)
     row = await conn.fetchrow(
         "INSERT INTO job_profile_researches "
-        "(job_profile_id, paper_name, publication_link, description) "
-        "VALUES ($1, $2, $3, $4) RETURNING *",
+        "(job_profile_id, paper_name, publication_link, description, journal, year) "
+        "VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
         job_profile_id,
         data.paper_name,
         data.publication_link,
         data.description,
+        data.journal,
+        data.year,
     )
     return row
 
@@ -148,14 +150,16 @@ async def import_researches_from_profile(
         for row in source_rows:
             await conn.fetchrow(
                 "INSERT INTO job_profile_researches "
-                "(job_profile_id, source_research_id, paper_name, publication_link, description) "
-                "VALUES ($1, $2, $3, $4, $5) "
+                "(job_profile_id, source_research_id, paper_name, publication_link, description, journal, year) "
+                "VALUES ($1, $2, $3, $4, $5, $6, $7) "
                 "RETURNING id",
                 job_profile_id,
                 row["id"],
                 row["paper_name"],
                 row["publication_link"],
                 row["description"] or "",
+                row.get("journal"),
+                row.get("year"),
             )
             imported_ids.append(row["id"])
 

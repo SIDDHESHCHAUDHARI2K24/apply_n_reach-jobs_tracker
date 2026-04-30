@@ -183,3 +183,24 @@ def test_partial_update_empty_body_400(authenticated_client):
     created = client.post("/profile/experience", json=_exp_payload()).json()
     resp = client.patch(f"/profile/experience/{created['id']}", json={})
     assert resp.status_code == 400
+
+
+def test_create_experience_max_one_work_sample_link(authenticated_client):
+    """POST /profile/experience with 2 work_sample_links returns 422."""
+    client, _ = authenticated_client
+    _create_profile(client)
+    resp = client.post("/profile/experience", json=_exp_payload(
+        work_sample_links=["https://a.com", "https://b.com"]
+    ))
+    assert resp.status_code == 422
+
+
+def test_create_experience_one_work_sample_link_allowed(authenticated_client):
+    """POST /profile/experience with exactly 1 work_sample_link succeeds."""
+    client, _ = authenticated_client
+    _create_profile(client)
+    resp = client.post("/profile/experience", json=_exp_payload(
+        work_sample_links=["https://a.com"]
+    ))
+    assert resp.status_code == 201
+    assert resp.json()["work_sample_links"] == ["https://a.com"]

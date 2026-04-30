@@ -2,8 +2,8 @@ export interface OpeningResume {
   id: string
   job_opening_id: string
   source_job_profile_id: string | null
-  created_at: string
-  updated_at: string
+  status: string
+  generated_at: string | null
 }
 
 export interface ORPersonal {
@@ -14,32 +14,40 @@ export interface ORPersonal {
 }
 
 export interface OREducation {
-  id: string; resume_id: string; institution: string; degree: string;
+  id: string; resume_id: string; institution: string; degree: string | null;
   field_of_study: string | null; start_date: string | null; end_date: string | null;
-  gpa: string | null; bullet_points: string[];
+  gpa: string | null; description: string | null; display_order: number;
 }
 
 export interface ORExperience {
   id: string; resume_id: string; company: string; title: string;
   location: string | null; start_date: string | null; end_date: string | null;
-  is_current: boolean; bullet_points: string[];
+  is_current: boolean; description: string | null; display_order: number;
 }
 
 export interface ORProject {
   id: string; resume_id: string; title: string; description: string | null;
-  technologies: string[]; url: string | null; bullet_points: string[];
+  technologies: string[]; url: string | null; start_date: string | null; end_date: string | null;
+  display_order: number;
 }
 
 export interface ORResearch {
-  id: string; resume_id: string; title: string; institution: string | null;
-  journal: string | null; year: string | null; description: string | null;
-  url: string | null; bullet_points: string[]; reference_links: string[];
+  id: string; resume_id: string; title: string; publication: string | null;
+  published_date: string | null; description: string | null;
+  url: string | null; display_order: number;
 }
 
 export interface ORCertification {
   id: string; resume_id: string; name: string; issuing_organization: string | null;
   issue_date: string | null; expiry_date: string | null;
-  credential_id: string | null; credential_url: string | null;
+  credential_id: string | null; credential_url: string | null; display_order: number;
 }
 
-export interface ORSkills { skills: string[] }
+export interface ORSkillItem {
+  id: string
+  resume_id: string
+  category: string
+  name: string
+  proficiency_level: string | null
+  display_order: number
+}

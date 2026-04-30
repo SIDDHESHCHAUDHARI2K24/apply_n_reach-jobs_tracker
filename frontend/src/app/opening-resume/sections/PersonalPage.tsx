@@ -1,10 +1,10 @@
+'use client'
+
 import React, { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
 import { useORPersonal } from '@features/opening-resume/sections/useORPersonal'
 
-export default function ORPersonalPage() {
-  const { openingId } = useParams<{ openingId: string }>()
-  const { data, isLoading, isSaving, error, save } = useORPersonal(openingId ?? '')
+export default function ORPersonalPage({ openingId }: { openingId: string }) {
+  const { data, isLoading, isSaving, error, save } = useORPersonal(openingId)
   const [form, setForm] = useState({ full_name: '', email: '', summary: '' })
 
   // Sync form with loaded data

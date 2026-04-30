@@ -21,3 +21,6 @@ CREATE TABLE IF NOT EXISTS job_profile_projects (
 async def ensure_jp_projects_schema(conn: asyncpg.Connection) -> None:
     """Create the job_profile_projects table if it does not exist."""
     await conn.execute(CREATE_JP_PROJECTS_TABLE)
+    await conn.execute(
+        "ALTER TABLE job_profile_projects ADD COLUMN IF NOT EXISTS technologies JSONB NOT NULL DEFAULT '[]'"
+    )

@@ -59,6 +59,8 @@ class ResearchUpdate(BaseSchema):
     paper_name: Optional[str] = None
     publication_link: Optional[str] = None
     description: Optional[str] = None
+    journal: Optional[str] = None
+    year: Optional[str] = None
 
     @field_validator("paper_name", mode="before")
     @classmethod
@@ -80,6 +82,20 @@ class ResearchUpdate(BaseSchema):
         if v is None:
             return None
         return sanitize_text(v, max_length=2000)
+
+    @field_validator("journal", mode="before")
+    @classmethod
+    def sanitize_journal(cls, v):
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=500)
+
+    @field_validator("year", mode="before")
+    @classmethod
+    def sanitize_year(cls, v):
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=10)
 
 
 class ResearchResponse(BaseSchema):

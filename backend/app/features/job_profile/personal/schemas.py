@@ -16,6 +16,9 @@ class JPPersonalDetailsCreate(BaseSchema):
     linkedin_url: str
     github_url: Optional[str] = None
     portfolio_url: Optional[str] = None
+    summary: Optional[str] = None
+    location: Optional[str] = None
+    phone: Optional[str] = None
 
     @field_validator("full_name", mode="before")
     @classmethod
@@ -40,6 +43,27 @@ class JPPersonalDetailsCreate(BaseSchema):
         if v is None:
             return None
         return sanitize_text(v, max_length=2048)
+
+    @field_validator("summary", mode="before")
+    @classmethod
+    def sanitize_summary(cls, v):
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=2000)
+
+    @field_validator("location", mode="before")
+    @classmethod
+    def sanitize_location(cls, v):
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=255)
+
+    @field_validator("phone", mode="before")
+    @classmethod
+    def sanitize_phone(cls, v):
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=50)
 
 
 class JPPersonalDetailsUpdate(BaseSchema):
@@ -50,6 +74,9 @@ class JPPersonalDetailsUpdate(BaseSchema):
     linkedin_url: Optional[str] = None
     github_url: Optional[str] = None
     portfolio_url: Optional[str] = None
+    summary: Optional[str] = None
+    location: Optional[str] = None
+    phone: Optional[str] = None
 
     @field_validator("full_name", mode="before")
     @classmethod
@@ -78,6 +105,27 @@ class JPPersonalDetailsUpdate(BaseSchema):
         if v is None:
             return None
         return sanitize_text(v, max_length=2048)
+
+    @field_validator("summary", mode="before")
+    @classmethod
+    def sanitize_summary(cls, v):
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=2000)
+
+    @field_validator("location", mode="before")
+    @classmethod
+    def sanitize_location(cls, v):
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=255)
+
+    @field_validator("phone", mode="before")
+    @classmethod
+    def sanitize_phone(cls, v):
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=50)
 
 
 class JPPersonalDetailsResponse(BaseSchema):
@@ -91,5 +139,8 @@ class JPPersonalDetailsResponse(BaseSchema):
     linkedin_url: str
     github_url: Optional[str] = None
     portfolio_url: Optional[str] = None
+    summary: Optional[str] = None
+    location: Optional[str] = None
+    phone: Optional[str] = None
     created_at: datetime
     updated_at: datetime

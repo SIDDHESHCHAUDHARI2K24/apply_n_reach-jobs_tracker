@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     environment: str = "local"
     database_url: str
     log_level: str = "INFO"
+    openrouter_api_key: str | None = None
+    openai_api_key: str | None = None
+    langchain_api_key: str | None = None
+    apify_api_token: str | None = None
 
     model_config = SettingsConfigDict(
         env_prefix="",

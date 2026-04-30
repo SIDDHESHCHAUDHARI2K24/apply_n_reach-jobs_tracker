@@ -1,5 +1,7 @@
+'use client'
+
 import { useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 import { User, LogOut } from 'lucide-react'
 import { apiRequest } from '@core/http/client'
 import { useAuth } from '@core/auth/context'
@@ -7,7 +9,7 @@ import { useAuth } from '@core/auth/context'
 export function SettingsView() {
   const { user, clearUser } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const navigate = useNavigate()
+  const router = useRouter()
 
   const logout = useCallback(async () => {
     setIsLoggingOut(true)
@@ -15,10 +17,10 @@ export function SettingsView() {
       await apiRequest('/auth/logout', { method: 'POST' })
     } finally {
       clearUser()
-      navigate('/auth/login', { replace: true })
+      router.replace('/auth/login')
       setIsLoggingOut(false)
     }
-  }, [navigate, clearUser])
+  }, [router, clearUser])
 
   return (
     <div className="max-w-xl space-y-6">

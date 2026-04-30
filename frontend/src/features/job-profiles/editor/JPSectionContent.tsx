@@ -43,6 +43,30 @@ function SectionSummary({ section, data }: { section: string; data: unknown }) {
     )
   }
 
+  if (section === 'skills' && typeof data === 'object' && data !== null) {
+    const list = Array.isArray((data as { skills?: unknown }).skills)
+      ? ((data as { skills: unknown[] }).skills.filter(item => typeof item === 'string') as string[])
+      : []
+    return (
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
+          {list.length} item{list.length !== 1 ? 's' : ''}
+        </p>
+        {list.length === 0 ? (
+          <p className="text-sm text-slate-400">No items yet. Import from your user profile to get started.</p>
+        ) : (
+          <div className="space-y-2">
+            {list.slice(0, 8).map((skill, idx) => (
+              <div key={`${skill}-${idx}`} className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+                <p className="text-sm font-medium text-slate-800">{skill}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // Array sections
   if (Array.isArray(data)) {
     const items = data as Array<Record<string, unknown>>

@@ -165,3 +165,24 @@ def test_partial_update_empty_body_400(authenticated_client):
     edu_id = edu_resp.json()["id"]
     resp = client.patch(f"/profile/education/{edu_id}", json={})
     assert resp.status_code == 400
+
+
+def test_create_education_max_one_reference_link(authenticated_client):
+    """POST /profile/education with 2 reference links returns 422."""
+    client, _ = authenticated_client
+    _create_profile(client)
+    resp = client.post("/profile/education", json=_edu_payload(
+        reference_links=["https://a.com", "https://b.com"]
+    ))
+    assert resp.status_code == 422
+
+
+def test_create_education_one_reference_link_allowed(authenticated_client):
+    """POST /profile/education with exactly 1 reference link succeeds."""
+    client, _ = authenticated_client
+    _create_profile(client)
+    resp = client.post("/profile/education", json=_edu_payload(
+        reference_links=["https://a.com"]
+    ))
+    assert resp.status_code == 201
+    assert resp.json()["reference_links"] == ["https://a.com"]

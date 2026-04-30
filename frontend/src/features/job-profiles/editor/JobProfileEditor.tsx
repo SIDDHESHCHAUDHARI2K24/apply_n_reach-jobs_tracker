@@ -1,4 +1,7 @@
-import { useParams, useSearchParams, Link } from 'react-router-dom'
+'use client'
+
+import Link from 'next/link'
+import { useParams, useSearchParams } from 'next/navigation'
 import { RenderPanel } from '@features/job-profiles/render/RenderPanel'
 import { JPSectionContent } from './JPSectionContent'
 
@@ -13,8 +16,9 @@ const SECTIONS = [
 ]
 
 export function JobProfileEditor() {
-  const { jobProfileId } = useParams<{ jobProfileId: string }>()
-  const [searchParams] = useSearchParams()
+  const params = useParams<{ jobProfileId?: string }>()
+  const searchParams = useSearchParams()
+  const jobProfileId = params?.jobProfileId
   const activeTab = searchParams.get('tab') ?? 'personal'
 
   if (!jobProfileId) return <div className="p-6 text-red-500">Invalid profile ID</div>
@@ -27,7 +31,7 @@ export function JobProfileEditor() {
         {SECTIONS.map(s => (
           <Link
             key={s.key}
-            to={`/job-profiles/${jobProfileId}/edit?tab=${s.key}`}
+            href={`/job-profiles/${jobProfileId}/edit?tab=${s.key}`}
             className={`relative flex items-center px-4 py-2.5 text-sm font-medium transition-colors no-underline ${
               activeTab === s.key
                 ? 'text-sky-600 bg-sky-50 border-l-2 border-sky-500'

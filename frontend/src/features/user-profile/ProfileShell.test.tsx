@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
 import { ProfileShell } from './shell/ProfileShell'
 import * as profileApiModule from '@features/user-profile/profileApi'
 import { HttpError } from '@core/http/client'
+
+const mockPathname = vi.fn(() => '/profile/personal')
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => mockPathname(),
+}))
 
 vi.mock('@features/user-profile/profileApi', () => ({
   profileApi: {
@@ -15,11 +20,8 @@ vi.mock('@features/user-profile/profileApi', () => ({
 beforeEach(() => vi.clearAllMocks())
 
 function renderShell(initialEntries = ['/profile/personal']) {
-  return render(
-    <MemoryRouter initialEntries={initialEntries}>
-      <ProfileShell />
-    </MemoryRouter>
-  )
+  mockPathname.mockReturnValue(initialEntries[0] ?? '/profile/personal')
+  return render(<ProfileShell><div>Body</div></ProfileShell>)
 }
 
 describe('ProfileShell', () => {

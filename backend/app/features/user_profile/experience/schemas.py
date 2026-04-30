@@ -158,6 +158,8 @@ class ExperienceUpdate(BaseSchema):
             return None
         if not isinstance(v, list):
             raise ValueError("work_sample_links must be a list")
+        if len(v) > 1:
+            raise ValueError("Only one work sample link allowed per entry")
         return [sanitize_text(str(item), max_length=2048) for item in v]
 
     @field_validator("bullet_points", mode="before")

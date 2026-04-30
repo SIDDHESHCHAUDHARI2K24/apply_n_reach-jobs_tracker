@@ -14,6 +14,13 @@ interface State {
 
 const PAGE_SIZE = 20
 
+function normalizePage(result: Awaited<ReturnType<typeof jobProfileApi.list>>) {
+  if (Array.isArray(result)) {
+    return { items: result, total: result.length, offset: 0 }
+  }
+  return result
+}
+
 export function useJobProfiles() {
   const [state, setState] = useState<State>({
     profiles: [],
@@ -30,13 +37,14 @@ export function useJobProfiles() {
     try {
       const params: { limit: number; offset: number; status?: string } = { limit: PAGE_SIZE, offset }
       if (filter !== 'all') params.status = filter
-      const items = await jobProfileApi.list(params)
+      const page = normalizePage(await jobProfileApi.list(params))
+      const items = page.items
       offsetRef.current = offset + items.length
       setState(s => ({
         ...s,
         profiles: offset === 0 ? items : [...s.profiles, ...items],
         isLoading: false,
-        hasMore: items.length === PAGE_SIZE,
+        hasMore: page.offset + page.items.length < page.total || items.length === PAGE_SIZE,
       }))
     } catch (err) {
       setState(s => ({ ...s, isLoading: false, error: err instanceof HttpError ? err.message : 'Failed to load' }))
@@ -49,17 +57,23 @@ export function useJobProfiles() {
     if (state.statusFilter !== 'all') params.status = state.statusFilter
     setState(s => ({ ...s, isLoading: true, error: null }))
     jobProfileApi.list(params)
-      .then(items => {
+      .then(result => {
         if (!cancelled) {
+          const page = normalizePage(result)
+          const items = page.items
           offsetRef.current = items.length
-          setState(s => ({ ...s, profiles: items, isLoading: false, hasMore: items.length === PAGE_SIZE }))
+          setState(s => ({
+            ...s,
+            profiles: items,
+            isLoading: false,
+            hasMore: page.offset + page.items.length < page.total || items.length === PAGE_SIZE,
+          }))
         }
       })
       .catch(err => {
         if (!cancelled) setState(s => ({ ...s, isLoading: false, error: err instanceof HttpError ? err.message : 'Failed to load' }))
       })
     return () => { cancelled = true }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.statusFilter])
 
   const setFilter = useCallback((filter: JobProfileStatus | 'all') => {

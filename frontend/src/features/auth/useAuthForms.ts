@@ -1,5 +1,7 @@
+'use client'
+
 import { useState, useCallback } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 import { HttpError } from '@core/http/client'
 import { useAuth } from '@core/auth/context'
 import { authApi } from './authApi'
@@ -15,8 +17,7 @@ const initial: FormState = { isLoading: false, error: null, success: null }
 
 export function useLoginForm() {
   const [state, setState] = useState<FormState>(initial)
-  const navigate = useNavigate()
-  const location = useLocation()
+  const router = useRouter()
   const { refetch } = useAuth()
 
   const login = useCallback(async (data: LoginRequest) => {
@@ -24,22 +25,24 @@ export function useLoginForm() {
     try {
       await authApi.login(data)
       await refetch()
-      const returnTo = (location.state as { returnTo?: string } | null)?.returnTo ?? '/job-profiles'
-      navigate(returnTo, { replace: true })
+      const returnTo = typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('returnTo') ?? '/job-profiles'
+        : '/job-profiles'
+      router.replace(returnTo)
     } catch (err) {
       const message = err instanceof HttpError ? err.message : 'Login failed'
       setState({ isLoading: false, error: message, success: null })
       return
     }
     setState(initial)
-  }, [navigate, location.state, refetch])
+  }, [router, refetch])
 
   return { ...state, login }
 }
 
 export function useRegisterForm() {
   const [state, setState] = useState<FormState>(initial)
-  const navigate = useNavigate()
+  const router = useRouter()
   const { refetch } = useAuth()
 
   const register = useCallback(async (data: RegisterRequest) => {
@@ -47,21 +50,21 @@ export function useRegisterForm() {
     try {
       await authApi.register(data)
       await refetch()
-      navigate('/job-profiles', { replace: true })
+      router.replace('/job-profiles')
     } catch (err) {
       const message = err instanceof HttpError ? err.message : 'Registration failed'
       setState({ isLoading: false, error: message, success: null })
       return
     }
     setState(initial)
-  }, [navigate, refetch])
+  }, [router, refetch])
 
   return { ...state, register }
 }
 
 export function useLogoutAction() {
   const [isLoading, setIsLoading] = useState(false)
-  const navigate = useNavigate()
+  const router = useRouter()
   const { clearUser } = useAuth()
 
   const logout = useCallback(async () => {
@@ -70,10 +73,10 @@ export function useLogoutAction() {
       await authApi.logout()
     } finally {
       clearUser()
-      navigate('/auth/login', { replace: true })
+      router.replace('/auth/login')
       setIsLoading(false)
     }
-  }, [navigate, clearUser])
+  }, [router, clearUser])
 
   return { isLoading, logout }
 }

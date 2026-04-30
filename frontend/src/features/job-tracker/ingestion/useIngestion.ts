@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { jobTrackerApi } from '@features/job-tracker/jobTrackerApi'
 import { HttpError } from '@core/http/client'
 import type { ExtractedDetails, ExtractionRun } from '@features/job-tracker/types'
@@ -9,6 +9,7 @@ interface IngestionState {
   latestDetails: ExtractedDetails | null
   runs: ExtractionRun[]
   error: string | null
+  selectedOpeningId: string | null
   lastRunId: string | null
 }
 
@@ -19,18 +20,25 @@ export function useIngestion() {
     latestDetails: null,
     runs: [],
     error: null,
+    selectedOpeningId: null,
     lastRunId: null,
   })
+  const selectedOpeningIdRef = useRef<string | null>(null)
 
-  const refresh = useCallback(async () => {
+  useEffect(() => {
+    selectedOpeningIdRef.current = state.selectedOpeningId
+  }, [state.selectedOpeningId])
+
+  const refresh = useCallback(async (openingIdArg?: string) => {
+    const openingId = openingIdArg ?? selectedOpeningIdRef.current ?? ''
     setState(s => ({ ...s, isRefreshing: true, error: null, isInFlight: false }))
     try {
-      const { run_id } = await jobTrackerApi.refreshExtraction()
+      const { run_id } = await jobTrackerApi.refreshExtraction(openingId)
       setState(s => ({ ...s, isRefreshing: false, lastRunId: run_id }))
       // Load latest extracted details and runs after starting
       const [details, runs] = await Promise.all([
-        jobTrackerApi.getLatestExtracted(),
-        jobTrackerApi.getExtractionRuns(),
+        jobTrackerApi.getLatestExtracted(openingId),
+        jobTrackerApi.getExtractionRuns(openingId),
       ])
       setState(s => ({ ...s, latestDetails: details, runs }))
     } catch (err) {
@@ -42,11 +50,12 @@ export function useIngestion() {
     }
   }, [])
 
-  const loadRuns = useCallback(async () => {
+  const loadRuns = useCallback(async (openingIdArg?: string) => {
+    const openingId = openingIdArg ?? selectedOpeningIdRef.current ?? ''
     try {
       const [details, runs] = await Promise.all([
-        jobTrackerApi.getLatestExtracted(),
-        jobTrackerApi.getExtractionRuns(),
+        jobTrackerApi.getLatestExtracted(openingId),
+        jobTrackerApi.getExtractionRuns(openingId),
       ])
       setState(s => ({ ...s, latestDetails: details, runs }))
     } catch (err) {
@@ -54,5 +63,9 @@ export function useIngestion() {
     }
   }, [])
 
-  return { ...state, refresh, loadRuns }
+  const setOpeningId = useCallback((openingId: string) => {
+    setState(s => ({ ...s, selectedOpeningId: openingId }))
+  }, [])
+
+  return { ...state, refresh, loadRuns, setOpeningId }
 }

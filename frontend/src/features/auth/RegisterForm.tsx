@@ -1,5 +1,7 @@
+'use client'
+
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import { AlertCircle } from 'lucide-react'
 import { useRegisterForm } from './useAuthForms'
 
@@ -28,7 +30,7 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="bg-white rounded-xl shadow-sm p-8">
-      <h1 className="font-['Sora'] text-2xl font-bold text-slate-900 mb-2">Create account</h1>
+      <h1 className="font-sora text-2xl font-bold text-slate-900 mb-2">Create account</h1>
       <p className="text-slate-500 text-sm mb-6">Join apply_n_reach and start tracking your job search.</p>
 
       {displayError && (
@@ -83,7 +85,7 @@ export function RegisterForm() {
 
       <p className="mt-5 text-center text-sm text-slate-500">
         Already have an account?{' '}
-        <Link to="/auth/login" className="text-sky-600 hover:underline font-medium">
+        <Link href="/auth/login" className="text-sky-600 hover:underline font-medium">
           Sign in
         </Link>
       </p>

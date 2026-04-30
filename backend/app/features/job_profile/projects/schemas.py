@@ -25,6 +25,7 @@ class JPProjectCreate(BaseSchema):
     start_month_year: Optional[str] = None
     end_month_year: Optional[str] = None
     reference_links: list[str] = []
+    technologies: list[str] = []
 
     @field_validator("project_name", mode="before")
     @classmethod
@@ -63,6 +64,15 @@ class JPProjectCreate(BaseSchema):
             raise ValueError("reference_links must be a list")
         return [sanitize_text(str(item), max_length=2048) for item in v]
 
+    @field_validator("technologies", mode="before")
+    @classmethod
+    def sanitize_technologies(cls, v):
+        if not isinstance(v, list):
+            raise ValueError("technologies must be a list")
+        if len(v) > 30:
+            raise ValueError("technologies may contain at most 30 items")
+        return [sanitize_text(str(item), max_length=100) for item in v]
+
     @model_validator(mode="after")
     def validate_date_order(self):
         if self.start_month_year and self.end_month_year:
@@ -81,6 +91,7 @@ class JPProjectUpdate(BaseSchema):
     start_month_year: Optional[str] = None
     end_month_year: Optional[str] = None
     reference_links: Optional[list[str]] = None
+    technologies: Optional[list[str]] = None
 
     @field_validator("project_name", mode="before")
     @classmethod
@@ -123,6 +134,17 @@ class JPProjectUpdate(BaseSchema):
             raise ValueError("reference_links must be a list")
         return [sanitize_text(str(item), max_length=2048) for item in v]
 
+    @field_validator("technologies", mode="before")
+    @classmethod
+    def sanitize_technologies(cls, v):
+        if v is None:
+            return None
+        if not isinstance(v, list):
+            raise ValueError("technologies must be a list")
+        if len(v) > 30:
+            raise ValueError("technologies may contain at most 30 items")
+        return [sanitize_text(str(item), max_length=100) for item in v]
+
     @model_validator(mode="after")
     def validate_date_order(self):
         if self.start_month_year and self.end_month_year:
@@ -144,5 +166,6 @@ class JPProjectResponse(BaseSchema):
     start_month_year: Optional[str] = None
     end_month_year: Optional[str] = None
     reference_links: list[str] = []
+    technologies: list[str] = []
     created_at: datetime
     updated_at: datetime

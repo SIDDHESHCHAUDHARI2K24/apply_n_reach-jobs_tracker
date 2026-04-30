@@ -50,3 +50,5 @@ Thumbs.db
 ## Logs / local tool state (optional noise)
 *.log
 .dmypy.json
+# Added by code-review-graph
+.code-review-graph/

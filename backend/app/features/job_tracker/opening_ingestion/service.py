@@ -7,8 +7,8 @@ import asyncpg
 from fastapi import HTTPException
 
 from app.features.job_tracker.opening_ingestion.clients.apify_client import CrawlError, crawl_url
+from app.features.job_tracker.agents.config import DEFAULT_MODEL
 from app.features.job_tracker.opening_ingestion.clients.extraction_chain import (
-    EXTRACTION_MODEL,
     ExtractionError,
     extract_job_details,
 )
@@ -100,13 +100,17 @@ async def _execute_run(conn, opening_id: int, run_id: int) -> None:
                 job_title, company_name, location, employment_type, salary_range,
                 description_summary, required_skills, preferred_skills,
                 experience_level, posted_date, application_deadline,
-                raw_payload, extractor_model, source_url
+                raw_payload, extractor_model, source_url,
+                role_summary, technical_keywords, sector_keywords,
+                business_sectors, problem_being_solved, useful_experiences
             ) VALUES (
                 $1, $2, 1,
                 $3, $4, $5, $6, $7,
                 $8, $9::jsonb, $10::jsonb,
                 $11, $12, $13,
-                $14::jsonb, $15, $16
+                $14::jsonb, $15, $16,
+                $17, $18::jsonb, $19::jsonb,
+                $20::jsonb, $21, $22::jsonb
             )
             """,
             run_id,
@@ -123,8 +127,14 @@ async def _execute_run(conn, opening_id: int, run_id: int) -> None:
             extracted.posted_date,
             extracted.application_deadline,
             json.dumps(extracted.model_dump()),
-            extracted.extractor_model or EXTRACTION_MODEL,
+            extracted.extractor_model or DEFAULT_MODEL,
             extracted.source_url or opening["source_url"],
+            extracted.role_summary,
+            json.dumps(extracted.technical_keywords or []),
+            json.dumps(extracted.sector_keywords or []),
+            json.dumps(extracted.business_sectors or []),
+            extracted.problem_being_solved,
+            json.dumps(extracted.useful_experiences or []),
         )
 
         # Mark succeeded

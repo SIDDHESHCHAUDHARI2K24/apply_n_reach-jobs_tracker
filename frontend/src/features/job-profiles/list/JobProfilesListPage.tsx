@@ -1,5 +1,7 @@
+'use client'
+
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import { Plus, FolderOpen, Trash2, AlertCircle } from 'lucide-react'
 import { useJobProfiles } from './useJobProfiles'
 import type { JobProfileStatus } from '@features/job-profiles/types'
@@ -142,7 +144,7 @@ export function JobProfilesListPage() {
               {/* Card footer */}
               <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                 <Link
-                  to={`/job-profiles/${profile.id}/edit`}
+                  href={`/job-profiles/${profile.id}/edit`}
                   className="text-sm font-medium text-sky-500 hover:text-sky-600 transition-colors"
                 >
                   Edit

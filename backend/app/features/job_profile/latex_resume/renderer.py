@@ -47,13 +47,20 @@ def render_pdf(latex_source: str, filename_stem: str = "resume") -> bytes:
         tex_path.write_text(latex_source, encoding="utf-8")
 
         # Run pdflatex (twice for cross-references)
-        cmd = [pdflatex, "-interaction=nonstopmode", "-output-directory", tmpdir, str(tex_path)]
+        cmd = [
+            pdflatex,
+            "-interaction=nonstopmode",
+            "-output-directory",
+            tmpdir,
+            tex_path.name,
+        ]
         for _ in range(2):
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 timeout=60,
+                cwd=tmpdir,
             )
 
         if not pdf_path.exists() or result.returncode != 0:

@@ -207,7 +207,7 @@ def test_source_experience_id_null_for_manual_entry(authenticated_client):
 
 def test_jsonb_fields_roundtrip(authenticated_client):
     client, _, _, jp_id = authenticated_client
-    links = ["https://github.com/project", "https://demo.example.com"]
+    links = ["https://github.com/project"]
     bullets = ["Reduced latency by 40%", "Mentored 3 junior engineers"]
     exp = _create_experience(
         client, jp_id,
@@ -220,6 +220,47 @@ def test_jsonb_fields_roundtrip(authenticated_client):
     data = resp.json()
     assert data["work_sample_links"] == links
     assert data["bullet_points"] == bullets
+
+
+# ---------------------------------------------------------------------------
+# B5 parity tests: max-1-link validator
+# ---------------------------------------------------------------------------
+
+def test_max_one_work_sample_link_create_422(authenticated_client):
+    """B5: Creating an experience with 2+ work_sample_links returns 422."""
+    client, _, _, jp_id = authenticated_client
+    resp = client.post(_exp_url(jp_id), json={
+        "role_title": "Engineer",
+        "company_name": "Corp",
+        "start_month_year": "01/2020",
+        "context": "Work",
+        "work_sample_links": ["https://example.com/a", "https://example.com/b"],
+    })
+    assert resp.status_code == 422
+
+
+def test_max_one_work_sample_link_update_422(authenticated_client):
+    """B5: Patching an experience with 2+ work_sample_links returns 422."""
+    client, _, _, jp_id = authenticated_client
+    exp = _create_experience(client, jp_id)
+    resp = client.patch(_exp_item_url(jp_id, exp["id"]), json={
+        "work_sample_links": ["https://example.com/a", "https://example.com/b"],
+    })
+    assert resp.status_code == 422
+
+
+def test_single_work_sample_link_accepted(authenticated_client):
+    """B5: Creating an experience with exactly 1 work_sample_link is accepted."""
+    client, _, _, jp_id = authenticated_client
+    exp = _create_experience(client, jp_id, work_sample_links=["https://example.com/demo"])
+    assert exp["work_sample_links"] == ["https://example.com/demo"]
+
+
+def test_empty_work_sample_links_accepted(authenticated_client):
+    """B5: Creating an experience with an empty work_sample_links list is accepted."""
+    client, _, _, jp_id = authenticated_client
+    exp = _create_experience(client, jp_id, work_sample_links=[])
+    assert exp["work_sample_links"] == []
 
 
 # ---------------------------------------------------------------------------

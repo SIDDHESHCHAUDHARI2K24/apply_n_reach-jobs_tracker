@@ -165,7 +165,7 @@ export const profileApi = {
       start_month_year: data.start_date ?? '',
       end_month_year: data.end_date ?? null,
       bullet_points: data.bullet_points ?? [],
-      reference_links: [],
+      reference_links: (data as any).reference_links ?? [],
     }
     const response = await apiRequest<UserProfileEducationResponse>('/profile/education', { method: 'POST', body: payload })
     return mapEducation(response)
@@ -179,6 +179,7 @@ export const profileApi = {
       start_month_year: data.start_date ?? undefined,
       end_month_year: data.end_date ?? undefined,
       bullet_points: data.bullet_points ?? undefined,
+      reference_links: (data as any).reference_links !== undefined ? (data as any).reference_links : undefined,
     }
     const response = await apiRequest<UserProfileEducationResponse>(`/profile/education/${id}`, { method: 'PATCH', body: payload })
     return mapEducation(response)

@@ -43,7 +43,7 @@ export function ExperienceList() {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-['Sora'] text-xl font-semibold text-slate-800">Experience</h2>
+      <h2 className="font-sora text-xl font-semibold text-slate-800">Experience</h2>
 
       {error && (
         <div role="alert" className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">

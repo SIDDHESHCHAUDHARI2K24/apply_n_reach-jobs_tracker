@@ -13,6 +13,13 @@ interface State {
   hasMore: boolean
 }
 
+function normalizeList(result: Awaited<ReturnType<typeof jobTrackerApi.list>>) {
+  if (Array.isArray(result)) {
+    return { items: result, has_more: result.length === PAGE_SIZE }
+  }
+  return result
+}
+
 export function useJobOpenings() {
   const [state, setState] = useState<State>({
     openings: [],
@@ -39,14 +46,15 @@ export function useJobOpenings() {
       if (f.company) params.company = f.company
       if (f.role) params.role = f.role
       if (afterId) params.after_id = afterId
-      const items = await jobTrackerApi.list(params)
+      const page = normalizeList(await jobTrackerApi.list(params))
+      const items = page.items
       const newLastId = items.length > 0 ? items[items.length - 1].id : afterId
       lastIdRef.current = newLastId
       setState(s => ({
         ...s,
         openings: replace ? items : [...s.openings, ...items],
         isLoading: false,
-        hasMore: items.length === PAGE_SIZE,
+        hasMore: page.has_more,
       }))
     } catch (err) {
       setState(s => ({ ...s, isLoading: false, error: err instanceof HttpError ? err.message : 'Failed to load' }))
@@ -63,14 +71,16 @@ export function useJobOpenings() {
     if (filters.company) params.company = filters.company
     if (filters.role) params.role = filters.role
     jobTrackerApi.list(params)
-      .then(items => {
+      .then(result => {
         if (!cancelled) {
+          const page = normalizeList(result)
+          const items = page.items
           lastIdRef.current = items.length > 0 ? items[items.length - 1].id : null
           setState(s => ({
             ...s,
             openings: items,
             isLoading: false,
-            hasMore: items.length === PAGE_SIZE,
+            hasMore: page.has_more,
           }))
         }
       })

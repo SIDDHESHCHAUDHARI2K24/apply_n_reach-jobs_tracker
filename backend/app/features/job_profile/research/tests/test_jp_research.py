@@ -310,6 +310,74 @@ def test_import_empty_ids_422(authenticated_client):
     assert resp.status_code == 422
 
 
+# ---------------------------------------------------------------------------
+# B5 parity tests: journal and year fields
+# ---------------------------------------------------------------------------
+
+def test_journal_field_roundtrip(authenticated_client):
+    """B5: journal is stored and returned correctly."""
+    client, user_data, _ = authenticated_client
+    jp = _create_job_profile(client)
+    resp = client.post(
+        f"/job-profiles/{jp['id']}/research",
+        json=_research_payload(journal="Nature", year="2023"),
+    )
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["journal"] == "Nature"
+    assert data["year"] == "2023"
+
+
+def test_year_field_roundtrip(authenticated_client):
+    """B5: year is stored and returned correctly on its own."""
+    client, user_data, _ = authenticated_client
+    jp = _create_job_profile(client)
+    resp = client.post(
+        f"/job-profiles/{jp['id']}/research",
+        json=_research_payload(year="2024"),
+    )
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["year"] == "2024"
+    assert data["journal"] is None
+
+
+def test_journal_year_default_null(authenticated_client):
+    """B5: journal and year default to null when not provided."""
+    client, user_data, _ = authenticated_client
+    jp = _create_job_profile(client)
+    created = _create_research(client, jp["id"])
+    assert created["journal"] is None
+    assert created["year"] is None
+
+
+def test_journal_update(authenticated_client):
+    """B5: PATCH updates journal correctly."""
+    client, user_data, _ = authenticated_client
+    jp = _create_job_profile(client)
+    created = _create_research(client, jp["id"])
+    resp = client.patch(
+        f"/job-profiles/{jp['id']}/research/{created['id']}",
+        json={"journal": "Science"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["journal"] == "Science"
+    assert resp.json()["paper_name"] == created["paper_name"]  # unchanged
+
+
+def test_html_stripped_from_journal(authenticated_client):
+    """B5: HTML tags in journal are stripped by sanitize_text."""
+    client, user_data, _ = authenticated_client
+    jp = _create_job_profile(client)
+    resp = client.post(
+        f"/job-profiles/{jp['id']}/research",
+        json=_research_payload(journal="<b>Nature</b>"),
+    )
+    assert resp.status_code == 201
+    assert "<b>" not in resp.json()["journal"]
+    assert "Nature" in resp.json()["journal"]
+
+
 def test_delete_master_nullifies_source_id(authenticated_client):
     """15. Deleting the master research entry sets source_research_id to NULL."""
     client, user_data, _ = authenticated_client

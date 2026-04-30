@@ -12,11 +12,11 @@ export default function RegisterPage() {
         <div className="max-w-sm w-full">
           <div className="flex items-center gap-3 mb-6">
             <Rocket className="text-sky-400" size={36} />
-            <span className="font-['Sora'] text-3xl font-bold text-white tracking-tight">
+            <span className="font-sora text-3xl font-bold text-white tracking-tight">
               apply_n_reach
             </span>
           </div>
-          <p className="text-slate-300 text-lg mb-10 font-['Sora']">
+          <p className="text-slate-300 text-lg mb-10 font-sora">
             Land your next role faster
           </p>
           <ul className="space-y-4">

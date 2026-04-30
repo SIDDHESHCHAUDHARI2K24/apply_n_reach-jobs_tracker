@@ -14,6 +14,8 @@ class JPResearchCreate(BaseSchema):
     paper_name: str
     publication_link: str
     description: str = ""
+    journal: Optional[str] = None
+    year: Optional[str] = None
 
     @field_validator("paper_name", mode="before")
     @classmethod
@@ -29,6 +31,20 @@ class JPResearchCreate(BaseSchema):
     @classmethod
     def sanitize_description(cls, v):
         return sanitize_text(v, max_length=10000)
+
+    @field_validator("journal", mode="before")
+    @classmethod
+    def sanitize_journal(cls, v):
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=500)
+
+    @field_validator("year", mode="before")
+    @classmethod
+    def sanitize_year(cls, v):
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=10)
 
 
 class JPResearchUpdate(BaseSchema):
@@ -37,6 +53,8 @@ class JPResearchUpdate(BaseSchema):
     paper_name: Optional[str] = None
     publication_link: Optional[str] = None
     description: Optional[str] = None
+    journal: Optional[str] = None
+    year: Optional[str] = None
 
     @field_validator("paper_name", mode="before")
     @classmethod
@@ -58,6 +76,20 @@ class JPResearchUpdate(BaseSchema):
         if v is None:
             return None
         return sanitize_text(v, max_length=10000)
+
+    @field_validator("journal", mode="before")
+    @classmethod
+    def sanitize_journal(cls, v):
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=500)
+
+    @field_validator("year", mode="before")
+    @classmethod
+    def sanitize_year(cls, v):
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=10)
 
 
 class JPResearchResponse(BaseSchema):
@@ -69,5 +101,7 @@ class JPResearchResponse(BaseSchema):
     paper_name: str
     publication_link: str
     description: str
+    journal: Optional[str] = None
+    year: Optional[str] = None
     created_at: datetime
     updated_at: datetime

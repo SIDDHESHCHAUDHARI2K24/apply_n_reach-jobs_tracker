@@ -109,6 +109,31 @@ class PersonalDetailsUpdate(BaseSchema):
             return None
         return sanitize_text(v, max_length=2048)
 
+    summary: Optional[str] = None
+    location: Optional[str] = None
+    phone: Optional[str] = None
+
+    @field_validator("summary", mode="before")
+    @classmethod
+    def sanitize_summary(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=2000)
+
+    @field_validator("location", mode="before")
+    @classmethod
+    def sanitize_location(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=255)
+
+    @field_validator("phone", mode="before")
+    @classmethod
+    def sanitize_phone(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=50)
+
 
 class PersonalDetailsResponse(BaseSchema):
     """Response schema for GET /profile/personal and PATCH /profile/personal."""

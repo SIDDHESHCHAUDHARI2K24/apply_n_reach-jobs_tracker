@@ -23,9 +23,30 @@ async function parseError(response: Response): Promise<HttpError> {
   let code: number | undefined
 
   try {
-    const body = await response.json()
-    if (typeof body.detail === 'string') message = body.detail
-    if (typeof body.code === 'number') code = body.code
+    const body = await response.json() as { detail?: unknown; code?: unknown; message?: unknown }
+
+    if (typeof body.code === 'number') {
+      code = body.code
+    }
+
+    if (typeof body.detail === 'string') {
+      message = body.detail
+    } else if (Array.isArray(body.detail) && body.detail.length > 0) {
+      // FastAPI validation errors usually provide a list of issues.
+      const first = body.detail[0] as Record<string, unknown>
+      if (typeof first?.msg === 'string') {
+        const loc = Array.isArray(first?.loc)
+          ? first.loc.map(segment => String(segment)).join('.')
+          : undefined
+        message = loc ? `${loc}: ${first.msg}` : first.msg
+      } else {
+        message = 'Validation failed'
+      }
+    } else if (body.detail && typeof body.detail === 'object') {
+      message = JSON.stringify(body.detail)
+    } else if (typeof body.message === 'string') {
+      message = body.message
+    }
   } catch {
     // non-JSON error body — use status text
   }

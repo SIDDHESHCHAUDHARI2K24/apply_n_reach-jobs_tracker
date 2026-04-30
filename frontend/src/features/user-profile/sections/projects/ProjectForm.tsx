@@ -9,7 +9,6 @@ type FormFields = {
   url: string
   start_date: string
   end_date: string
-  bullet_points: string
 }
 
 function toForm(item?: Project): FormFields {
@@ -20,7 +19,6 @@ function toForm(item?: Project): FormFields {
     url: item?.url ?? '',
     start_date: item?.start_date ?? '',
     end_date: item?.end_date ?? '',
-    bullet_points: item?.bullet_points.join('\n') ?? '',
   }
 }
 
@@ -32,7 +30,6 @@ function fromForm(form: FormFields): Omit<Project, 'id' | 'profile_id' | 'create
     url: form.url || null,
     start_date: form.start_date || null,
     end_date: form.end_date || null,
-    bullet_points: form.bullet_points ? form.bullet_points.split('\n').filter(l => l.trim()) : [],
   }
 }
 
@@ -122,7 +119,7 @@ export function ProjectForm({ initial, isSaving, onSave, onCancel }: Props) {
             name="start_date"
             value={form.start_date}
             onChange={handleChange}
-            placeholder="YYYY-MM-DD"
+            placeholder="MM/YYYY"
             className={fieldClass}
           />
         </div>
@@ -132,23 +129,10 @@ export function ProjectForm({ initial, isSaving, onSave, onCancel }: Props) {
             name="end_date"
             value={form.end_date}
             onChange={handleChange}
-            placeholder="YYYY-MM-DD or leave blank"
+            placeholder="MM/YYYY or leave blank"
             className={fieldClass}
           />
         </div>
-      </div>
-
-      {/* Bullet Points */}
-      <div className="space-y-1">
-        <label className={labelClass}>Highlights <span className="text-xs font-normal text-slate-400">(one per line)</span></label>
-        <textarea
-          name="bullet_points"
-          value={form.bullet_points}
-          onChange={handleChange}
-          rows={4}
-          placeholder={"Built RESTful API with FastAPI\nAchieved 95% test coverage"}
-          className={fieldClass}
-        />
       </div>
 
       {/* Actions */}

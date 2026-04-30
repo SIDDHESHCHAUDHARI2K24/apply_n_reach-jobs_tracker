@@ -54,8 +54,8 @@ async def add_project(
     return await conn.fetchrow(
         "INSERT INTO job_profile_projects "
         "(job_profile_id, source_project_id, project_name, description, "
-        "start_month_year, end_month_year, reference_links) "
-        "VALUES ($1, NULL, $2, $3, $4, $5, $6::jsonb) "
+        "start_month_year, end_month_year, reference_links, technologies) "
+        "VALUES ($1, NULL, $2, $3, $4, $5, $6::jsonb, $7::jsonb) "
         "RETURNING *",
         job_profile_id,
         data.project_name,
@@ -63,6 +63,7 @@ async def add_project(
         data.start_month_year,
         data.end_month_year,
         json.dumps(data.reference_links),
+        json.dumps(data.technologies),
     )
 
 
@@ -102,7 +103,7 @@ async def update_project(
         "job_profile_projects",
         {"id": project_id, "job_profile_id": job_profile_id},
         updates,
-        jsonb_fields={"reference_links"},
+        jsonb_fields={"reference_links", "technologies"},
     )
     row = await conn.fetchrow(query, *params)
     if row is None:
@@ -169,11 +170,15 @@ async def import_projects_from_profile(
             if not isinstance(reference_links, str):
                 reference_links = json.dumps(reference_links)
 
+            technologies = row.get("technologies", [])
+            if not isinstance(technologies, str):
+                technologies = json.dumps(technologies)
+
             await conn.execute(
                 "INSERT INTO job_profile_projects "
                 "(job_profile_id, source_project_id, project_name, description, "
-                "start_month_year, end_month_year, reference_links) "
-                "VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)",
+                "start_month_year, end_month_year, reference_links, technologies) "
+                "VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb)",
                 job_profile_id,
                 row["id"],
                 row["project_name"],
@@ -181,6 +186,7 @@ async def import_projects_from_profile(
                 row["start_month_year"],
                 row["end_month_year"],
                 reference_links,
+                technologies,
             )
             imported_ids.append(row["id"])
 

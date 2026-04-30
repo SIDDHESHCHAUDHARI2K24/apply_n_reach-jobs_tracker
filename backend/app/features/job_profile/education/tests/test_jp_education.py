@@ -269,3 +269,42 @@ class TestImport:
         resp = client.get(f"/job-profiles/{jp['id']}/education/{jp_edu_id}")
         assert resp.status_code == 200
         assert resp.json()["source_education_id"] is None
+
+
+class TestB5Parity:
+    """B5 parity tests: max-1-link validator for reference_links."""
+
+    def test_max_one_reference_link_create_422(self, authenticated_client):
+        """B5: Creating an education entry with 2+ reference_links returns 422."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        resp = client.post(f"/job-profiles/{jp['id']}/education", json={
+            "university_name": "MIT", "major": "CS", "degree_type": "BS",
+            "start_month_year": "09/2018",
+            "reference_links": ["https://mit.edu/a", "https://mit.edu/b"],
+        })
+        assert resp.status_code == 422
+
+    def test_max_one_reference_link_update_422(self, authenticated_client):
+        """B5: Patching an education entry with 2+ reference_links returns 422."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        edu = _add_education(client, jp["id"])
+        resp = client.patch(f"/job-profiles/{jp['id']}/education/{edu['id']}", json={
+            "reference_links": ["https://mit.edu/a", "https://mit.edu/b"],
+        })
+        assert resp.status_code == 422
+
+    def test_single_reference_link_accepted(self, authenticated_client):
+        """B5: Exactly 1 reference link is accepted."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        edu = _add_education(client, jp["id"], reference_links=["https://mit.edu/transcript"])
+        assert edu["reference_links"] == ["https://mit.edu/transcript"]
+
+    def test_empty_reference_links_accepted(self, authenticated_client):
+        """B5: Empty reference_links list is accepted."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        edu = _add_education(client, jp["id"], reference_links=[])
+        assert edu["reference_links"] == []

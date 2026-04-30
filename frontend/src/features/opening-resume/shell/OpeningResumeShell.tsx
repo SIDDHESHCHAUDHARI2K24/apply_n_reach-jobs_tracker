@@ -1,4 +1,8 @@
-import { useParams, Link, Outlet, useLocation } from 'react-router-dom'
+'use client'
+
+import type { ReactNode } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { ChevronRight, Camera, FileText } from 'lucide-react'
 import { useOpeningResume } from '@features/opening-resume/useOpeningResume'
 
@@ -12,12 +16,9 @@ const TABS = [
   { label: 'Skills', path: 'skills' },
 ]
 
-export function OpeningResumeShell() {
-  const { openingId } = useParams<{ openingId: string }>()
-  const location = useLocation()
-  const { resume, isLoading, isCreating, error, notFound, conflict, createResume } = useOpeningResume(openingId ?? '')
-
-  if (!openingId) return <div className="p-6 text-slate-500">Invalid opening ID</div>
+export function OpeningResumeShell({ openingId, children }: { openingId: string; children: ReactNode }) {
+  const pathname = usePathname()
+  const { resume, isLoading, isCreating, error, notFound, conflict, createResume } = useOpeningResume(openingId)
 
   if (isLoading) return (
     <div className="flex items-center justify-center py-16 text-slate-400 text-sm">
@@ -70,7 +71,7 @@ export function OpeningResumeShell() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4 px-1">
         <nav className="flex items-center gap-1.5 text-sm text-slate-500">
-          <Link to="/job-openings" className="hover:text-sky-600 transition-colors">Job Openings</Link>
+          <Link href="/job-tracker" className="hover:text-sky-600 transition-colors">Job Openings</Link>
           <ChevronRight size={14} className="text-slate-400" />
           <span className="text-slate-700 font-medium">Opening Resume</span>
         </nav>
@@ -84,11 +85,11 @@ export function OpeningResumeShell() {
       <nav className="flex gap-1 border-b border-slate-200 mb-6 overflow-x-auto">
         {TABS.map(tab => {
           const tabPath = `${basePath}/${tab.path}`
-          const isActive = location.pathname.startsWith(tabPath)
+          const isActive = pathname.startsWith(tabPath)
           return (
             <Link
               key={tab.path}
-              to={tabPath}
+              href={tabPath}
               className={[
                 'px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors',
                 isActive
@@ -102,7 +103,7 @@ export function OpeningResumeShell() {
         })}
       </nav>
 
-      <Outlet />
+      {children}
     </div>
   )
 }

@@ -238,3 +238,50 @@ class TestImport:
         resp = client.get(f"/job-profiles/{jp['id']}/projects/{jp_proj_id}")
         assert resp.status_code == 200
         assert resp.json()["source_project_id"] is None
+
+
+class TestB5Parity:
+    """B5 parity tests: technologies JSONB field for job profile projects."""
+
+    def test_technologies_field_roundtrip(self, authenticated_client):
+        """B5: technologies list is stored and returned correctly."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        proj = _add_project(client, jp["id"], technologies=["Python", "FastAPI", "PostgreSQL"])
+        assert proj["technologies"] == ["Python", "FastAPI", "PostgreSQL"]
+
+    def test_technologies_defaults_empty(self, authenticated_client):
+        """B5: technologies defaults to empty list when not provided."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        proj = _add_project(client, jp["id"])
+        assert proj["technologies"] == []
+
+    def test_technologies_update(self, authenticated_client):
+        """B5: PATCH updates technologies correctly."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        proj = _add_project(client, jp["id"], technologies=["Python"])
+        resp = client.patch(f"/job-profiles/{jp['id']}/projects/{proj['id']}", json={
+            "technologies": ["Python", "Docker"],
+        })
+        assert resp.status_code == 200
+        assert resp.json()["technologies"] == ["Python", "Docker"]
+
+    def test_technologies_max_30_items(self, authenticated_client):
+        """B5: More than 30 technologies returns 422."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        resp = client.post(f"/job-profiles/{jp['id']}/projects", json={
+            "project_name": "Big Project",
+            "technologies": [f"Tech{i}" for i in range(31)],
+        })
+        assert resp.status_code == 422
+
+    def test_html_stripped_from_technologies(self, authenticated_client):
+        """B5: HTML tags are stripped from technology items."""
+        client, _, _ = authenticated_client
+        jp = _create_job_profile(client)
+        proj = _add_project(client, jp["id"], technologies=["<b>Python</b>"])
+        assert "<b>" not in proj["technologies"][0]
+        assert "Python" in proj["technologies"][0]

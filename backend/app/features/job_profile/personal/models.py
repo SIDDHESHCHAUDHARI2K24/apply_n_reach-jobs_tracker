@@ -21,3 +21,12 @@ CREATE TABLE IF NOT EXISTS job_profile_personal_details (
 async def ensure_jp_personal_schema(conn: asyncpg.Connection) -> None:
     """Create the job_profile_personal_details table if it does not exist."""
     await conn.execute(CREATE_JP_PERSONAL_TABLE)
+    await conn.execute(
+        "ALTER TABLE job_profile_personal_details ADD COLUMN IF NOT EXISTS summary TEXT"
+    )
+    await conn.execute(
+        "ALTER TABLE job_profile_personal_details ADD COLUMN IF NOT EXISTS location TEXT"
+    )
+    await conn.execute(
+        "ALTER TABLE job_profile_personal_details ADD COLUMN IF NOT EXISTS phone TEXT"
+    )
