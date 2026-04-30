@@ -69,9 +69,6 @@ export function ResearchList() {
                 <div className="min-w-0">
                   <p className="font-semibold text-slate-800 text-sm leading-snug">{item.title}</p>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
-                    {item.institution && (
-                      <span className="text-slate-500 text-sm">{item.institution}</span>
-                    )}
                     {item.journal && (
                       <span className="text-slate-500 text-sm italic">{item.journal}</span>
                     )}
