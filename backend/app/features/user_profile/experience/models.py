@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS experiences (
     profile_id INTEGER NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
     role_title TEXT NOT NULL,
     company_name TEXT NOT NULL,
+    location TEXT,
     start_month_year TEXT NOT NULL,
     end_month_year TEXT,
     context TEXT NOT NULL DEFAULT '',

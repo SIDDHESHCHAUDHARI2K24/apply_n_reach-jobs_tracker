@@ -22,6 +22,7 @@ class JPExperienceCreate(BaseSchema):
 
     role_title: str
     company_name: str
+    location: Optional[str] = None
     start_month_year: str
     end_month_year: Optional[str] = None
     context: str = ""
@@ -36,6 +37,13 @@ class JPExperienceCreate(BaseSchema):
     @field_validator("company_name", mode="before")
     @classmethod
     def sanitize_company_name(cls, v):
+        return sanitize_text(v, max_length=255)
+
+    @field_validator("location", mode="before")
+    @classmethod
+    def sanitize_location(cls, v):
+        if v is None:
+            return None
         return sanitize_text(v, max_length=255)
 
     @field_validator("start_month_year", mode="before")
@@ -88,6 +96,7 @@ class JPExperienceUpdate(BaseSchema):
 
     role_title: Optional[str] = None
     company_name: Optional[str] = None
+    location: Optional[str] = None
     start_month_year: Optional[str] = None
     end_month_year: Optional[str] = None
     context: Optional[str] = None
@@ -104,6 +113,13 @@ class JPExperienceUpdate(BaseSchema):
     @field_validator("company_name", mode="before")
     @classmethod
     def sanitize_company_name(cls, v):
+        if v is None:
+            return None
+        return sanitize_text(v, max_length=255)
+
+    @field_validator("location", mode="before")
+    @classmethod
+    def sanitize_location(cls, v):
         if v is None:
             return None
         return sanitize_text(v, max_length=255)
@@ -170,6 +186,7 @@ class JPExperienceResponse(BaseSchema):
     source_experience_id: Optional[int] = None
     role_title: str
     company_name: str
+    location: Optional[str] = None
     start_month_year: str
     end_month_year: Optional[str] = None
     context: str

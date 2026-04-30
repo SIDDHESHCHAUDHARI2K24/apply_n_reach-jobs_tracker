@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS job_profile_experiences (
     source_experience_id INTEGER REFERENCES experiences(id) ON DELETE SET NULL,
     role_title TEXT NOT NULL,
     company_name TEXT NOT NULL,
+    location TEXT,
     start_month_year TEXT NOT NULL,
     end_month_year TEXT,
     context TEXT NOT NULL DEFAULT '',
