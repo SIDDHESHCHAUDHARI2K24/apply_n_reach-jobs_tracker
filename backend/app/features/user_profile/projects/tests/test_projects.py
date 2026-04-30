@@ -138,3 +138,28 @@ def test_reference_links_rejected_if_not_list(authenticated_client):
 def test_unauthenticated_returns_401(client):
     resp = client.get("/profile/projects")
     assert resp.status_code == 401
+
+
+def test_create_project_with_technologies(authenticated_client):
+    client, _ = authenticated_client
+    _create_profile(client)
+    payload = _proj_payload(technologies=["Python", "React"])
+    resp = client.post("/profile/projects", json=payload)
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["technologies"] == ["Python", "React"]
+    # Verify round-trip via GET
+    get_resp = client.get(f"/profile/projects/{data['id']}")
+    assert get_resp.status_code == 200
+    assert get_resp.json()["technologies"] == ["Python", "React"]
+
+
+def test_update_project_technologies(authenticated_client):
+    client, _ = authenticated_client
+    _create_profile(client)
+    created = client.post("/profile/projects", json=_proj_payload(technologies=["Python"])).json()
+    assert created["technologies"] == ["Python"]
+    updated_payload = _proj_payload(technologies=["TypeScript", "FastAPI", "PostgreSQL"])
+    resp = client.patch(f"/profile/projects/{created['id']}", json=updated_payload)
+    assert resp.status_code == 200
+    assert resp.json()["technologies"] == ["TypeScript", "FastAPI", "PostgreSQL"]
