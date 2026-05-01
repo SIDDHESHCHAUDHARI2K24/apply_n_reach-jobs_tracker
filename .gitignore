@@ -62,9 +62,8 @@ rag-data/
 resume/
 email_Feature/
 
-## TeX Live installer
+## TeX Live installer (binary download, ~100 MB — not source code)
 texlive-installer/
-installation.profile
 
 ## Frontend build artifacts
 *.tsbuildinfo
