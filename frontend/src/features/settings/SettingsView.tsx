@@ -39,8 +39,6 @@ export function SettingsView() {
               <dd className="text-slate-800">{user.email}</dd>
               <dt className="text-slate-500 font-medium">Member since</dt>
               <dd className="text-slate-800">{new Date(user.created_at).toLocaleDateString()}</dd>
-              <dt className="text-slate-500 font-medium">User ID</dt>
-              <dd className="text-slate-600 font-mono text-xs break-all">{user.id}</dd>
             </dl>
           )}
         </div>

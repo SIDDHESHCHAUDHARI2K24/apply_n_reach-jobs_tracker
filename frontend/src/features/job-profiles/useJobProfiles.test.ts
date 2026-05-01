@@ -7,6 +7,8 @@ vi.mock('@features/job-profiles/jobProfileApi', () => ({
   jobProfileApi: {
     list: vi.fn(),
     create: vi.fn(),
+    activate: vi.fn(),
+    archive: vi.fn(),
     remove: vi.fn(),
   },
 }))
@@ -14,6 +16,8 @@ vi.mock('@features/job-profiles/jobProfileApi', () => ({
 const mockApi = jpApiModule.jobProfileApi as unknown as {
   list: ReturnType<typeof vi.fn>
   create: ReturnType<typeof vi.fn>
+  activate: ReturnType<typeof vi.fn>
+  archive: ReturnType<typeof vi.fn>
   remove: ReturnType<typeof vi.fn>
 }
 
@@ -61,6 +65,26 @@ describe('useJobProfiles', () => {
     await act(async () => {})
     await act(async () => { await result.current.remove('1') })
     expect(result.current.profiles).toHaveLength(0)
+  })
+
+  it('activates a profile', async () => {
+    mockApi.list.mockResolvedValueOnce([profile])
+    mockApi.activate.mockResolvedValueOnce({ ...profile, status: 'active' })
+    const { useJobProfiles } = await import('./list/useJobProfiles')
+    const { result } = renderHook(() => useJobProfiles())
+    await act(async () => {})
+    await act(async () => { await result.current.activate('1') })
+    expect(result.current.profiles[0]?.status).toBe('active')
+  })
+
+  it('archives a profile', async () => {
+    mockApi.list.mockResolvedValueOnce([{ ...profile, status: 'active' }])
+    mockApi.archive.mockResolvedValueOnce({ ...profile, status: 'archived' })
+    const { useJobProfiles } = await import('./list/useJobProfiles')
+    const { result } = renderHook(() => useJobProfiles())
+    await act(async () => {})
+    await act(async () => { await result.current.archive('1') })
+    expect(result.current.profiles[0]?.status).toBe('archived')
   })
 
   it('sets error on load failure', async () => {

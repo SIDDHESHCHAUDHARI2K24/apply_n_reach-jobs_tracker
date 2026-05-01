@@ -1,9 +1,12 @@
 """Service functions for job_profile core CRUD."""
+import logging
+
 import asyncpg
 from fastapi import HTTPException, status
 
 from app.features.core.query_helpers import build_partial_update_query
 from app.features.job_profile.core import models
+from app.features.job_profile.personal import service as personal_service
 from app.features.job_profile.core.schemas import (
     JobProfileCreate,
     JobProfileListParams,
@@ -11,6 +14,7 @@ from app.features.job_profile.core.schemas import (
 )
 
 _MAX_JOB_PROFILES = 50
+logger = logging.getLogger(__name__)
 
 
 async def create_job_profile(
@@ -44,6 +48,26 @@ async def create_job_profile(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="A job profile with this name already exists",
+        )
+
+    # Best-effort snapshot: creating a job profile should not fail if
+    # master personal details are missing or temporarily unavailable.
+    try:
+        await personal_service.import_personal_from_profile(conn, row["id"], user_id)
+    except HTTPException as exc:
+        if exc.status_code != status.HTTP_404_NOT_FOUND:
+            logger.warning(
+                "Auto-import of personal details failed for job profile %s and user %s",
+                row["id"],
+                user_id,
+                exc_info=True,
+            )
+    except Exception:
+        logger.warning(
+            "Unexpected auto-import failure for job profile %s and user %s",
+            row["id"],
+            user_id,
+            exc_info=True,
         )
     return row
 

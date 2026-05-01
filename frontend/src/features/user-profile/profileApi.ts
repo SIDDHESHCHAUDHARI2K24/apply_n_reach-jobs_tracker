@@ -31,6 +31,10 @@ import type {
 } from '@generated/contracts'
 
 const toStringId = (id: number) => String(id)
+type LinkedInImportResponse = {
+  message: string
+  sections_imported: Record<string, number>
+}
 
 function mapPersonal(response: UserProfilePersonalResponse): PersonalDetails {
   return {
@@ -150,6 +154,12 @@ export const profileApi = {
     const response = await apiRequest<UserProfilePersonalResponse>('/profile/personal', { method: 'PATCH', body: payload })
     return mapPersonal(response)
   },
+
+  importFromLinkedIn: (linkedinUrl: string) =>
+    apiRequest<LinkedInImportResponse>('/profile/import/linkedin', {
+      method: 'POST',
+      body: { linkedin_url: linkedinUrl },
+    }),
 
   // Education
   getEducation: async () => {

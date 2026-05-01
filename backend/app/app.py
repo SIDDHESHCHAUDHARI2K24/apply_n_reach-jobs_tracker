@@ -33,6 +33,7 @@ from app.features.job_profile.projects.router import router as jp_projects_route
 from app.features.job_profile.research.router import router as jp_research_router
 from app.features.job_profile.certifications.router import router as jp_certifications_router
 from app.features.job_profile.skills.router import router as jp_skills_router
+from app.features.job_profile.status.router import router as jp_status_router
 from app.features.job_profile.latex_resume.router import router as jp_latex_resume_router
 from app.features.job_tracker.openings_core.router import router as jt_openings_router
 from app.features.job_tracker.opening_ingestion.router import router as jt_ingestion_router
@@ -47,6 +48,7 @@ from app.features.job_tracker.opening_resume.research.router import router as jt
 from app.features.job_tracker.opening_resume.certifications.router import router as jt_resume_certifications_router
 from app.features.job_tracker.opening_resume.skills.router import router as jt_resume_skills_router
 from app.features.job_tracker.agents.router import router as jt_agent_router
+from app.features.job_tracker.email_agent.router import router as jt_email_agent_router
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +78,16 @@ async def lifespan(app: FastAPI):
                     WHERE status='failed'
                       AND error_message LIKE 'Marked failed on startup%'
                   )
+                """
+            )
+            # Mark stale email agent runs as failed on startup
+            await conn.execute(
+                """
+                UPDATE job_opening_email_agent_runs
+                SET status='failed', completed_at=NOW(),
+                    error_message='Marked failed on startup: run was stale (server restart)'
+                WHERE status='running'
+                  AND started_at < NOW() - INTERVAL '5 minutes'
                 """
             )
     except Exception:
@@ -138,6 +150,7 @@ def create_app() -> FastAPI:
     app.include_router(jp_research_router)
     app.include_router(jp_certifications_router)
     app.include_router(jp_skills_router)
+    app.include_router(jp_status_router)
     app.include_router(jp_latex_resume_router)
 
     # Job tracker routers.
@@ -155,5 +168,8 @@ def create_app() -> FastAPI:
 
     # Resume agent router.
     app.include_router(jt_agent_router)
+
+    # Email agent router.
+    app.include_router(jt_email_agent_router)
 
     return app

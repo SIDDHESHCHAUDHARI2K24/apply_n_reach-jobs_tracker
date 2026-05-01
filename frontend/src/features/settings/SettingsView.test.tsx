@@ -42,11 +42,6 @@ describe('SettingsView', () => {
     expect(screen.getByText('test@example.com')).toBeInTheDocument()
   })
 
-  it('renders user id', () => {
-    renderView()
-    expect(screen.getByText('u1')).toBeInTheDocument()
-  })
-
   it('calls logout when sign out button clicked', async () => {
     renderView()
     fireEvent.click(screen.getByRole('button', { name: /sign out/i }))

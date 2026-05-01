@@ -37,6 +37,7 @@ Thumbs.db
 ## Agent / editor (any depth)
 **/.claude/
 **/.cursor/
+.clone/
 
 ## Git worktrees
 .worktrees/
@@ -50,5 +51,21 @@ Thumbs.db
 ## Logs / local tool state (optional noise)
 *.log
 .dmypy.json
+**/temp_log.txt
+
 # Added by code-review-graph
 .code-review-graph/
+
+## Local data / generated artifacts (not for version control)
+**/graphify-out/
+rag-data/
+resume/
+email_Feature/
+
+## TeX Live installer
+texlive-installer/
+installation.profile
+
+## Frontend build artifacts
+*.tsbuildinfo
+frontend/next-env.d.ts

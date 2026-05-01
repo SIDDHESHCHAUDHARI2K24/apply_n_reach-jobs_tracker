@@ -22,6 +22,46 @@ def test_create_job_profile(authenticated_client):
     assert data["user_id"] == user_data["id"]
 
 
+def test_create_auto_imports_personal_snapshot_when_master_exists(authenticated_client):
+    client, _, _ = authenticated_client
+    personal_payload = {
+        "full_name": "Snapshot User",
+        "email": "snapshot@example.com",
+        "linkedin_url": "https://linkedin.com/in/snapshot",
+        "github_url": "https://github.com/snapshot",
+    }
+    setup_resp = client.patch("/profile/personal", json=personal_payload)
+    assert setup_resp.status_code == 200
+
+    create_resp = client.post("/job-profiles", json={
+        "profile_name": f"Snapshot Resume {uuid.uuid4().hex[:8]}",
+        "target_role": "SWE",
+    })
+    assert create_resp.status_code == 201
+    jp_id = create_resp.json()["id"]
+
+    personal_resp = client.get(f"/job-profiles/{jp_id}/personal")
+    assert personal_resp.status_code == 200
+    personal_data = personal_resp.json()
+    assert personal_data["full_name"] == "Snapshot User"
+    assert personal_data["email"] == "snapshot@example.com"
+    assert personal_data["linkedin_url"] == "https://linkedin.com/in/snapshot"
+    assert personal_data["source_personal_id"] is not None
+
+
+def test_create_succeeds_without_master_personal_snapshot(authenticated_client):
+    client, _, _ = authenticated_client
+    create_resp = client.post("/job-profiles", json={
+        "profile_name": f"No Personal Resume {uuid.uuid4().hex[:8]}",
+    })
+    assert create_resp.status_code == 201
+    jp_id = create_resp.json()["id"]
+
+    personal_resp = client.get(f"/job-profiles/{jp_id}/personal")
+    assert personal_resp.status_code == 404
+    assert personal_resp.json()["detail"] == "Personal details not found"
+
+
 def test_create_duplicate_name_409(authenticated_client):
     client, _, _ = authenticated_client
     name = f"Duplicate Resume {uuid.uuid4().hex[:8]}"

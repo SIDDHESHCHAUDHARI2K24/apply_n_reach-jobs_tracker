@@ -108,5 +108,37 @@ export function useJobProfiles() {
     }
   }, [])
 
-  return { ...state, setFilter, loadMore, create, remove }
+  const activate = useCallback(async (id: string) => {
+    setState(s => ({ ...s, isSaving: true, error: null }))
+    try {
+      const updated = await jobProfileApi.activate(id)
+      setState(s => ({
+        ...s,
+        profiles: s.profiles.map(p => (p.id === id ? updated : p)),
+        isSaving: false,
+      }))
+      return updated
+    } catch (err) {
+      setState(s => ({ ...s, isSaving: false, error: err instanceof HttpError ? err.message : 'Failed to activate' }))
+      throw err
+    }
+  }, [])
+
+  const archive = useCallback(async (id: string) => {
+    setState(s => ({ ...s, isSaving: true, error: null }))
+    try {
+      const updated = await jobProfileApi.archive(id)
+      setState(s => ({
+        ...s,
+        profiles: s.profiles.map(p => (p.id === id ? updated : p)),
+        isSaving: false,
+      }))
+      return updated
+    } catch (err) {
+      setState(s => ({ ...s, isSaving: false, error: err instanceof HttpError ? err.message : 'Failed to archive' }))
+      throw err
+    }
+  }, [])
+
+  return { ...state, setFilter, loadMore, create, remove, activate, archive }
 }

@@ -25,7 +25,7 @@ class ExperienceCreate(BaseSchema):
     location: Optional[str] = None
     start_month_year: str
     end_month_year: Optional[str] = None
-    context: str
+    context: Optional[str] = ""
     work_sample_links: list[str] = []
     bullet_points: list[str] = []
 
@@ -65,6 +65,8 @@ class ExperienceCreate(BaseSchema):
     @field_validator("context", mode="before")
     @classmethod
     def sanitize_context(cls, v):
+        if v is None:
+            return ""
         return sanitize_text(v, max_length=10000)
 
     @field_validator("work_sample_links", mode="before")

@@ -140,6 +140,17 @@ def test_context_field_accepted(authenticated_client):
     assert resp.json()["context"] == long_context
 
 
+def test_context_optional_on_create(authenticated_client):
+    """Context can be omitted on create and defaults to empty string."""
+    client, _ = authenticated_client
+    _create_profile(client)
+    payload = _exp_payload()
+    payload.pop("context")
+    resp = client.post("/profile/experience", json=payload)
+    assert resp.status_code == 201
+    assert resp.json()["context"] == ""
+
+
 def test_context_too_long_returns_422(authenticated_client):
     """Context over 10000 chars returns 422."""
     client, _ = authenticated_client

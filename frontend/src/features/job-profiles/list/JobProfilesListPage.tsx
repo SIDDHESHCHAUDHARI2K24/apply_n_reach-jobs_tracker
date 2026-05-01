@@ -14,7 +14,7 @@ const STATUS_FILTERS: Array<{ label: string; value: JobProfileStatus | 'all' }> 
 ]
 
 export function JobProfilesListPage() {
-  const { profiles, isLoading, isSaving, error, statusFilter, hasMore, setFilter, loadMore, create, remove } = useJobProfiles()
+  const { profiles, isLoading, isSaving, error, statusFilter, hasMore, setFilter, loadMore, create, remove, activate, archive } = useJobProfiles()
   const [showCreate, setShowCreate] = useState(false)
   const [newTitle, setNewTitle] = useState('')
 
@@ -143,12 +143,31 @@ export function JobProfilesListPage() {
 
               {/* Card footer */}
               <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                <Link
-                  href={`/job-profiles/${profile.id}/edit`}
-                  className="text-sm font-medium text-sky-500 hover:text-sky-600 transition-colors"
-                >
-                  Edit
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/job-profiles/${profile.id}/edit`}
+                    className="text-sm font-medium text-sky-500 hover:text-sky-600 transition-colors"
+                  >
+                    Edit
+                  </Link>
+                  {profile.status === 'active' ? (
+                    <button
+                      onClick={() => { archive(profile.id).catch(() => {}) }}
+                      disabled={isSaving}
+                      className="px-2 py-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 rounded-md transition-colors disabled:opacity-50"
+                    >
+                      Archive
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => { activate(profile.id).catch(() => {}) }}
+                      disabled={isSaving}
+                      className="px-2 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-md transition-colors disabled:opacity-50"
+                    >
+                      Activate
+                    </button>
+                  )}
+                </div>
                 <button
                   onClick={() => { remove(profile.id).catch(() => {}) }}
                   disabled={isSaving}
