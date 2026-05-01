@@ -141,7 +141,7 @@ async def scrape_linkedin_profile(linkedin_url: str) -> dict:
             http_status=503,
         )
 
-    actor_id = "harvestapi/linkedin-profile-scraper"
+    actor_id = "harvestapi~linkedin-profile-scraper"
     endpoint = f"https://api.apify.com/v2/acts/{actor_id}/run-sync-get-dataset-items"
 
     async with httpx.AsyncClient(timeout=120.0) as client:
