@@ -71,6 +71,30 @@ describe('apiRequest', () => {
     }
   })
 
+  it('throws HttpError with detail.message and detail.error_code from nested error object', async () => {
+    mockFetch(503, {
+      detail: { message: 'Apify API token not configured', error_code: 'MISSING_API_TOKEN', stage: 'config' },
+    }, false)
+    try {
+      await apiRequest('/linkedin/import')
+    } catch (err) {
+      expect(err).toBeInstanceOf(HttpError)
+      expect((err as HttpError).status).toBe(503)
+      expect((err as HttpError).message).toBe('Apify API token not configured')
+      expect((err as HttpError).code).toBe('MISSING_API_TOKEN')
+    }
+  })
+
+  it('falls back to JSON.stringify when detail object has no message key', async () => {
+    mockFetch(500, { detail: { stage: 'unknown', raw: true } }, false)
+    try {
+      await apiRequest('/broken')
+    } catch (err) {
+      expect(err).toBeInstanceOf(HttpError)
+      expect((err as HttpError).message).toBe('{"stage":"unknown","raw":true}')
+    }
+  })
+
   it('returns undefined on 204 No Content', async () => {
     ;(globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,

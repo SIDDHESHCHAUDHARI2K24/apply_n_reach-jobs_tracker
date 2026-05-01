@@ -2,15 +2,15 @@ import { API_BASE_URL } from '@core/config/env'
 
 export interface ApiError {
   message: string
-  code?: number
+  code?: number | string
   status: number
 }
 
 export class HttpError extends Error {
-  readonly code?: number
+  readonly code?: number | string
   readonly status: number
 
-  constructor(message: string, status: number, code?: number) {
+  constructor(message: string, status: number, code?: number | string) {
     super(message)
     this.name = 'HttpError'
     this.status = status
@@ -20,12 +20,12 @@ export class HttpError extends Error {
 
 async function parseError(response: Response): Promise<HttpError> {
   let message = `HTTP ${response.status}`
-  let code: number | undefined
+  let code: number | string | undefined
 
   try {
     const body = await response.json() as { detail?: unknown; code?: unknown; message?: unknown }
 
-    if (typeof body.code === 'number') {
+    if (typeof body.code === 'number' || typeof body.code === 'string') {
       code = body.code
     }
 
@@ -43,7 +43,15 @@ async function parseError(response: Response): Promise<HttpError> {
         message = 'Validation failed'
       }
     } else if (body.detail && typeof body.detail === 'object') {
-      message = JSON.stringify(body.detail)
+      const detailObj = body.detail as Record<string, unknown>
+      if (typeof detailObj.message === 'string') {
+        message = detailObj.message
+      } else {
+        message = JSON.stringify(body.detail)
+      }
+      if (typeof detailObj.error_code === 'string') {
+        code = detailObj.error_code
+      }
     } else if (typeof body.message === 'string') {
       message = body.message
     }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { usePersonal } from './usePersonal'
 import type { PersonalDetails } from '@features/user-profile/types'
+import { profileApi } from '@features/user-profile/profileApi'
 import { Link2, Globe, AlertCircle } from 'lucide-react'
 
 type EditableFields = Omit<PersonalDetails, 'id' | 'profile_id' | 'created_at' | 'updated_at'>
@@ -31,9 +32,12 @@ function toForm(data: PersonalDetails | null): EditableFields {
 }
 
 export function PersonalForm() {
-  const { data, isLoading, isSaving, error, save } = usePersonal()
+  const { data, isLoading, isSaving, error, save, refresh } = usePersonal()
   const [form, setForm] = useState<EditableFields>(EMPTY)
   const [success, setSuccess] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
+  const [importSummary, setImportSummary] = useState<string | null>(null)
+  const [isImporting, setIsImporting] = useState(false)
 
   useEffect(() => {
     setForm(toForm(data))
@@ -49,6 +53,49 @@ export function PersonalForm() {
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }))
     setSuccess(false)
+    setImportError(null)
+    setImportSummary(null)
+  }
+
+  function isValidLinkedInUrl(value: string): boolean {
+    try {
+      const parsed = new URL(value)
+      return parsed.hostname.includes('linkedin.com')
+    } catch {
+      return false
+    }
+  }
+
+  async function handleLinkedInImport() {
+    setImportError(null)
+    setImportSummary(null)
+
+    let linkedinUrl = (data?.linkedin_url ?? '').trim()
+    if (!linkedinUrl) {
+      const typedUrl = window.prompt('Enter your LinkedIn profile URL')
+      if (!typedUrl) return
+      linkedinUrl = typedUrl.trim()
+    }
+
+    if (!isValidLinkedInUrl(linkedinUrl)) {
+      setImportError('Please enter a valid LinkedIn URL.')
+      return
+    }
+
+    setIsImporting(true)
+    try {
+      const response = await profileApi.importFromLinkedIn(linkedinUrl)
+      await refresh()
+      const sections = Object.entries(response.sections_imported)
+        .map(([name, count]) => `${name}: ${count}`)
+        .join(', ')
+      setImportSummary(sections ? `Imported sections (${sections})` : response.message)
+    } catch (err: any) {
+      const statusPrefix = err?.status ? ` (${err.status})` : ''
+      setImportError(`Import failed${statusPrefix}: ${err?.message || 'Import failed'}`)
+    } finally {
+      setIsImporting(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -79,6 +126,17 @@ export function PersonalForm() {
         <div role="alert" className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
+        </div>
+      )}
+      {importError && (
+        <div role="alert" className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {importError}
+        </div>
+      )}
+      {importSummary && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 text-emerald-700 text-sm">
+          {importSummary}
         </div>
       )}
 
@@ -176,6 +234,14 @@ export function PersonalForm() {
       </div>
 
       <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={handleLinkedInImport}
+          disabled={isImporting || isSaving}
+          className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors disabled:opacity-50 text-sm"
+        >
+          {isImporting ? 'Importing...' : 'Import from LinkedIn'}
+        </button>
         <button
           type="submit"
           disabled={isSaving}
