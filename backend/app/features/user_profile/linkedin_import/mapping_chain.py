@@ -26,14 +26,17 @@ async def map_linkedin_to_profile(raw_data: dict) -> MappedLinkedInProfile:
     try:
         model = get_chat_llm(temperature=0).with_structured_output(MappedLinkedInProfile)
 
-        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.messages import SystemMessage
+        from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
         from app.features.job_tracker.agents.prompt_loader import load_prompt
 
         system_prompt = load_prompt("linkedin_map")
 
         prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            ("human", "Map this LinkedIn profile data to the structured format:\n\n{data}"),
+            SystemMessage(content=system_prompt),
+            HumanMessagePromptTemplate.from_template(
+                "Map this LinkedIn profile data to the structured format:\n\n{data}",
+            ),
         ])
 
         chain = prompt | model

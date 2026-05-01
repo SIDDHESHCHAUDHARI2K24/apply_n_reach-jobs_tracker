@@ -1,8 +1,9 @@
 """Unit tests for LinkedIn scraper — validate_linkedin_url and scrape_linkedin_profile."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from apify_client.errors import ApifyApiError
 
 from app.features.user_profile.linkedin_import.errors import (
     ErrorCode,
@@ -59,6 +60,14 @@ class TestValidateLinkedInUrl:
 
 
 @pytest.fixture
+def mock_apify_client():
+    with patch(
+        "app.features.user_profile.linkedin_import.scraper.ApifyClientAsync"
+    ) as mock:
+        yield mock
+
+
+@pytest.fixture
 def mock_settings_with_token():
     with patch(
         "app.features.user_profile.linkedin_import.scraper.get_settings"
@@ -76,19 +85,22 @@ def mock_settings_no_token():
         yield mock_get
 
 
-@pytest.fixture
-def mock_post_with_retry():
-    with patch(
-        "app.features.user_profile.linkedin_import.scraper._post_with_retry"
-    ) as mock:
-        yield mock
+def _make_apify_error(status_code: int) -> ApifyApiError:
+    """Create an ApifyApiError with the given status_code, bypassing the
+    constructor (which requires a real impit.Response object)."""
+    err = ApifyApiError.__new__(ApifyApiError)
+    err.status_code = status_code
+    return err
+
+
+ACTOR_ID = "harvestapi~linkedin-profile-scraper"
 
 
 class TestScrapeLinkedInProfile:
-    """Test scrape_linkedin_profile with mocked dependencies."""
+    """Test scrape_linkedin_profile with mocked ApifyClientAsync."""
 
     @pytest.mark.asyncio
-    async def test_missing_token_raises_config_error(self, mock_settings_no_token):
+    async def test_missing_token(self, mock_settings_no_token):
         with pytest.raises(LinkedInImportAppError) as exc:
             await scrape_linkedin_profile("https://www.linkedin.com/in/test")
         assert exc.value.code == ErrorCode.MISSING_API_TOKEN
@@ -96,25 +108,47 @@ class TestScrapeLinkedInProfile:
         assert exc.value.http_status == 503
 
     @pytest.mark.asyncio
-    async def test_happy_path_returns_first_item(
-        self, mock_settings_with_token, mock_post_with_retry
-    ):
-        mock_post_with_retry.return_value = {"name": "John", "headline": "Engineer"}
+    async def test_happy_path(self, mock_settings_with_token, mock_apify_client):
+        mock_instance = MagicMock()
+        mock_apify_client.return_value = mock_instance
+
+        # Mock actor().call() to return run result
+        mock_actor = MagicMock()
+        mock_instance.actor.return_value = mock_actor
+        mock_actor.call = AsyncMock(return_value={
+            "id": "run-123",
+            "defaultDatasetId": "dataset-456",
+        })
+
+        # Mock dataset().list_items() to return profile data
+        mock_dataset = MagicMock()
+        mock_instance.dataset.return_value = mock_dataset
+        mock_dataset.list_items = AsyncMock(return_value=MagicMock(
+            items=[{"firstName": "John", "lastName": "Doe", "headline": "Engineer"}]
+        ))
 
         result = await scrape_linkedin_profile("https://www.linkedin.com/in/john")
 
-        assert result == {"name": "John", "headline": "Engineer"}
+        assert result["firstName"] == "John"
+        assert result["lastName"] == "Doe"
+        mock_instance.actor.assert_called_once_with(ACTOR_ID)
+        mock_instance.dataset.assert_called_once_with("dataset-456")
 
     @pytest.mark.asyncio
-    async def test_empty_items_raises_error(
-        self, mock_settings_with_token, mock_post_with_retry
-    ):
-        mock_post_with_retry.side_effect = LinkedInImportAppError(
-            "No profile data returned from Apify",
-            stage=ImportStage.scrape,
-            code=ErrorCode.EMPTY_SCRAPE_RESULT,
-            http_status=422,
-        )
+    async def test_empty_items(self, mock_settings_with_token, mock_apify_client):
+        mock_instance = MagicMock()
+        mock_apify_client.return_value = mock_instance
+
+        mock_actor = MagicMock()
+        mock_instance.actor.return_value = mock_actor
+        mock_actor.call = AsyncMock(return_value={
+            "id": "run-123",
+            "defaultDatasetId": "dataset-456",
+        })
+
+        mock_dataset = MagicMock()
+        mock_instance.dataset.return_value = mock_dataset
+        mock_dataset.list_items = AsyncMock(return_value=MagicMock(items=[]))
 
         with pytest.raises(LinkedInImportAppError) as exc:
             await scrape_linkedin_profile("https://www.linkedin.com/in/test")
@@ -122,15 +156,36 @@ class TestScrapeLinkedInProfile:
         assert exc.value.http_status == 422
 
     @pytest.mark.asyncio
-    async def test_401_raises_bad_credentials(
-        self, mock_settings_with_token, mock_post_with_retry
-    ):
-        mock_post_with_retry.side_effect = LinkedInImportAppError(
-            "Apify authentication failed: 401",
-            stage=ImportStage.scrape,
-            code=ErrorCode.APIFY_BAD_CREDENTIALS,
-            http_status=502,
-        )
+    async def test_actor_error_result(self, mock_settings_with_token, mock_apify_client):
+        mock_instance = MagicMock()
+        mock_apify_client.return_value = mock_instance
+
+        mock_actor = MagicMock()
+        mock_instance.actor.return_value = mock_actor
+        mock_actor.call = AsyncMock(return_value={
+            "id": "run-123",
+            "defaultDatasetId": "dataset-456",
+        })
+
+        mock_dataset = MagicMock()
+        mock_instance.dataset.return_value = mock_dataset
+        mock_dataset.list_items = AsyncMock(return_value=MagicMock(
+            items=[{"status": "error", "error": "blocked"}]
+        ))
+
+        with pytest.raises(LinkedInImportAppError) as exc:
+            await scrape_linkedin_profile("https://www.linkedin.com/in/test")
+        assert exc.value.code == ErrorCode.EMPTY_SCRAPE_RESULT
+        assert exc.value.http_status == 422
+
+    @pytest.mark.asyncio
+    async def test_401(self, mock_settings_with_token, mock_apify_client):
+        mock_instance = MagicMock()
+        mock_apify_client.return_value = mock_instance
+
+        mock_actor = MagicMock()
+        mock_instance.actor.return_value = mock_actor
+        mock_actor.call = AsyncMock(side_effect=_make_apify_error(401))
 
         with pytest.raises(LinkedInImportAppError) as exc:
             await scrape_linkedin_profile("https://www.linkedin.com/in/test")
@@ -138,15 +193,13 @@ class TestScrapeLinkedInProfile:
         assert exc.value.http_status == 502
 
     @pytest.mark.asyncio
-    async def test_429_raises_quota_exceeded(
-        self, mock_settings_with_token, mock_post_with_retry
-    ):
-        mock_post_with_retry.side_effect = LinkedInImportAppError(
-            "Apify quota exceeded",
-            stage=ImportStage.scrape,
-            code=ErrorCode.APIFY_QUOTA_EXCEEDED,
-            http_status=502,
-        )
+    async def test_429(self, mock_settings_with_token, mock_apify_client):
+        mock_instance = MagicMock()
+        mock_apify_client.return_value = mock_instance
+
+        mock_actor = MagicMock()
+        mock_instance.actor.return_value = mock_actor
+        mock_actor.call = AsyncMock(side_effect=_make_apify_error(429))
 
         with pytest.raises(LinkedInImportAppError) as exc:
             await scrape_linkedin_profile("https://www.linkedin.com/in/test")
@@ -154,9 +207,7 @@ class TestScrapeLinkedInProfile:
         assert exc.value.http_status == 502
 
     @pytest.mark.asyncio
-    async def test_invalid_url_before_token_check(
-        self, mock_settings_no_token
-    ):
+    async def test_invalid_url(self, mock_settings_no_token):
         with pytest.raises(LinkedInImportAppError) as exc:
             await scrape_linkedin_profile("https://evil.com/in/foo")
         assert exc.value.code == ErrorCode.INVALID_LINKEDIN_URL

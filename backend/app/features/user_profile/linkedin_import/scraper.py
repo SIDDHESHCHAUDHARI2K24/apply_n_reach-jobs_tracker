@@ -1,8 +1,8 @@
 """LinkedIn profile scraper using Apify."""
-import asyncio
 import logging
 
-import httpx
+from apify_client import ApifyClientAsync
+from apify_client.errors import ApifyApiError
 
 from app.features.core.config import get_settings
 from app.features.user_profile.linkedin_import.errors import (
@@ -13,9 +13,8 @@ from app.features.user_profile.linkedin_import.errors import (
 
 logger = logging.getLogger(__name__)
 
-_RETRYABLE_STATUSES = frozenset({429, 500, 502, 503, 504})
-_MAX_RETRIES = 3
-_RETRY_BACKOFF_BASE = 2.0
+ACTOR_ID = "harvestapi~linkedin-profile-scraper"
+SCRAPER_MODE = "Profile details no email ($4 per 1k)"
 
 
 def validate_linkedin_url(url: str) -> str:
@@ -45,84 +44,6 @@ def validate_linkedin_url(url: str) -> str:
     return stripped
 
 
-async def _post_with_retry(client: httpx.AsyncClient, endpoint: str, token: str, url: str) -> dict:
-    """POST to Apify with bounded retries for transient failures."""
-    last_exc: Exception | None = None
-    for attempt in range(1 + _MAX_RETRIES):
-        try:
-            response = await client.post(
-                endpoint,
-                params={"token": token},
-                json={
-                    "startUrls": [url],
-                    "proxyConfiguration": {"useApifyProxy": True},
-                },
-            )
-            if response.status_code in _RETRYABLE_STATUSES and attempt < _MAX_RETRIES:
-                body_preview = response.text[:512]
-                logger.warning(
-                    "Apify transient error (attempt %d/%d) status=%d body=%s",
-                    attempt + 1, 1 + _MAX_RETRIES, response.status_code, body_preview,
-                )
-                await asyncio.sleep(_RETRY_BACKOFF_BASE ** attempt)
-                continue
-            response.raise_for_status()
-            items = response.json()
-            if not items:
-                raise LinkedInImportAppError(
-                    "No profile data returned from Apify",
-                    stage=ImportStage.scrape,
-                    code=ErrorCode.EMPTY_SCRAPE_RESULT,
-                    http_status=422,
-                )
-            return items[0]
-        except LinkedInImportAppError:
-            raise
-        except httpx.HTTPStatusError as e:
-            status = e.response.status_code
-            if status in (401, 403):
-                raise LinkedInImportAppError(
-                    f"Apify authentication failed: {status}",
-                    stage=ImportStage.scrape,
-                    code=ErrorCode.APIFY_BAD_CREDENTIALS,
-                    http_status=502,
-                ) from e
-            if status == 429:
-                raise LinkedInImportAppError(
-                    "Apify quota exceeded",
-                    stage=ImportStage.scrape,
-                    code=ErrorCode.APIFY_QUOTA_EXCEEDED,
-                    http_status=502,
-                ) from e
-            body_preview = e.response.text[:512] if hasattr(e.response, "text") else "<no body>"
-            logger.exception(
-                "Apify upstream error status=%d body=%s", status, body_preview,
-            )
-            raise LinkedInImportAppError(
-                f"Upstream error from Apify: {status}",
-                stage=ImportStage.scrape,
-                code=ErrorCode.UPSTREAM_ERROR,
-                http_status=502,
-            ) from e
-        except httpx.HTTPError as e:
-            last_exc = e
-            if attempt < _MAX_RETRIES:
-                logger.warning(
-                    "HTTP error scraping LinkedIn (attempt %d/%d): %s",
-                    attempt + 1, 1 + _MAX_RETRIES, e,
-                )
-                await asyncio.sleep(_RETRY_BACKOFF_BASE ** attempt)
-                continue
-            break
-
-    raise LinkedInImportAppError(
-        f"HTTP error scraping LinkedIn after {1 + _MAX_RETRIES} attempts: {last_exc}",
-        stage=ImportStage.scrape,
-        code=ErrorCode.RETRIES_EXHAUSTED,
-        http_status=502,
-    ) from last_exc
-
-
 async def scrape_linkedin_profile(linkedin_url: str) -> dict:
     """Scrape a LinkedIn profile using Apify's harvestapi actor.
 
@@ -141,8 +62,100 @@ async def scrape_linkedin_profile(linkedin_url: str) -> dict:
             http_status=503,
         )
 
-    actor_id = "harvestapi~linkedin-profile-scraper"
-    endpoint = f"https://api.apify.com/v2/acts/{actor_id}/run-sync-get-dataset-items"
+    client = ApifyClientAsync(token=token)
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        return await _post_with_retry(client, endpoint, token, url)
+    try:
+        run = await client.actor(ACTOR_ID).call(
+            run_input={
+                "profileScraperMode": SCRAPER_MODE,
+                "queries": [url],
+            },
+            wait_secs=120,
+        )
+    except LinkedInImportAppError:
+        raise
+    except ApifyApiError as e:
+        status = getattr(e, "status_code", 0)
+        if status in (401, 403):
+            raise LinkedInImportAppError(
+                f"Apify authentication failed: {status}",
+                stage=ImportStage.scrape,
+                code=ErrorCode.APIFY_BAD_CREDENTIALS,
+                http_status=502,
+            ) from e
+        if status == 429:
+            raise LinkedInImportAppError(
+                "Apify quota exceeded",
+                stage=ImportStage.scrape,
+                code=ErrorCode.APIFY_QUOTA_EXCEEDED,
+                http_status=502,
+            ) from e
+        logger.exception("Apify API error: %s", e)
+        raise LinkedInImportAppError(
+            f"Upstream error from Apify: {e}",
+            stage=ImportStage.scrape,
+            code=ErrorCode.UPSTREAM_ERROR,
+            http_status=502,
+        ) from e
+    except Exception as e:
+        logger.exception("Unexpected error scraping LinkedIn")
+        raise LinkedInImportAppError(
+            f"Error scraping LinkedIn: {e}",
+            stage=ImportStage.scrape,
+            code=ErrorCode.UPSTREAM_ERROR,
+            http_status=502,
+        ) from e
+
+    logger.info("Apify actor run completed: %s", run.get("id"))
+
+    dataset_id = run.get("defaultDatasetId")
+    if not dataset_id:
+        raise LinkedInImportAppError(
+            "No dataset returned from Apify run",
+            stage=ImportStage.scrape,
+            code=ErrorCode.UPSTREAM_ERROR,
+            http_status=502,
+        )
+
+    try:
+        items_result = await client.dataset(dataset_id).list_items()
+        items = items_result.items if items_result else []
+    except LinkedInImportAppError:
+        raise
+    except ApifyApiError as e:
+        logger.exception("Apify dataset fetch error: %s", e)
+        raise LinkedInImportAppError(
+            f"Error fetching dataset from Apify: {e}",
+            stage=ImportStage.scrape,
+            code=ErrorCode.UPSTREAM_ERROR,
+            http_status=502,
+        ) from e
+    except Exception as e:
+        logger.exception("Unexpected error fetching dataset")
+        raise LinkedInImportAppError(
+            f"Error fetching dataset: {e}",
+            stage=ImportStage.scrape,
+            code=ErrorCode.UPSTREAM_ERROR,
+            http_status=502,
+        ) from e
+
+    if not items:
+        raise LinkedInImportAppError(
+            "No profile data returned from Apify",
+            stage=ImportStage.scrape,
+            code=ErrorCode.EMPTY_SCRAPE_RESULT,
+            http_status=422,
+        )
+
+    result = items[0]
+    if result.get("status") == "error":
+        error_msg = result.get("error", "Unknown scraping error")
+        raise LinkedInImportAppError(
+            f"LinkedIn scraper could not access profile: {error_msg}",
+            stage=ImportStage.scrape,
+            code=ErrorCode.EMPTY_SCRAPE_RESULT,
+            http_status=422,
+        )
+
+    logger.info("Apify scrape returned %d items", len(items))
+    return result
