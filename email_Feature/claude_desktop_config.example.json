@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "outreach-email-assistant": {
+      "command": "python",
+      "args": ["/ABSOLUTE/PATH/TO/outreach-feature/mcp_server.py"],
+      "env": {
+        "ANTHROPIC_API_KEY": "your_anthropic_api_key_here",
+        "APOLLO_API_KEY": "your_apollo_api_key_here"
+      }
+    }
+  }
+}

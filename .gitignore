@@ -60,7 +60,6 @@ Thumbs.db
 **/graphify-out/
 rag-data/
 resume/
-email_Feature/
 
 ## TeX Live installer (binary download, ~100 MB — not source code)
 texlive-installer/

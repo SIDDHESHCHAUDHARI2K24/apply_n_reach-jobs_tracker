@@ -1,0 +1,12 @@
+# Core dependencies — always required
+anthropic>=0.40.0
+langgraph>=0.2.0
+langchain-anthropic>=0.3.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+mcp>=1.0.0
+
+# Alternative LLM providers — install only the one(s) you need
+# groq>=0.9.0         # uncomment for Groq (free tier, fast)
+# ollama>=0.3.0       # uncomment for Ollama (local, free)
+# openai>=1.0.0       # uncomment for OpenRouter (free + paid models, single API key)
