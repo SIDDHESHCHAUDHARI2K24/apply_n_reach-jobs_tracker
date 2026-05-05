@@ -57,7 +57,7 @@ async def start_agent_run(
     if opening["agent_status"] == "running":
         raise HTTPException(status_code=409, detail="Agent already running for this opening")
 
-    # Create agent run record
+    # Create agent run record and mark opening as running atomically
     run = await conn.fetchrow(
         """
         INSERT INTO job_opening_agent_runs (opening_id, user_id, status)
@@ -65,6 +65,10 @@ async def start_agent_run(
         RETURNING id
         """,
         opening_id, current_user["id"],
+    )
+    await conn.execute(
+        "UPDATE job_openings SET agent_status='running', agent_run_id=$1 WHERE id=$2",
+        run["id"], opening_id,
     )
 
     # Launch background task

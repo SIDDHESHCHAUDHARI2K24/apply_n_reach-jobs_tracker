@@ -1,6 +1,10 @@
 """Apify website-content-crawler client for job posting ingestion."""
-import httpx
+from apify_client import ApifyClientAsync
+from apify_client.errors import ApifyApiError
+
 from app.features.core.config import get_settings
+
+ACTOR_ID = "apify~website-content-crawler"
 
 
 class CrawlError(Exception):
@@ -10,34 +14,41 @@ class CrawlError(Exception):
 async def crawl_url(url: str) -> str:
     """Crawl a URL using Apify website-content-crawler actor.
 
+    Uses Playwright (Chrome) for full JavaScript rendering so modern job
+    boards (Greenhouse, Lever, LinkedIn, etc.) are scraped correctly.
     Returns raw text content. Raises CrawlError on failure.
-
-    Uses settings.apify_api_token. If token not configured, raises
-    CrawlError("Apify API token not configured").
     """
     settings = get_settings()
     token = getattr(settings, "apify_api_token", None)
     if not token:
         raise CrawlError("Apify API token not configured")
 
-    actor_id = "apify/website-content-crawler"
-    endpoint = f"https://api.apify.com/v2/acts/{actor_id}/run-sync-get-dataset-items"
+    client = ApifyClientAsync(token=token)
+    try:
+        run = await client.actor(ACTOR_ID).call(
+            run_input={
+                "startUrls": [{"url": url}],
+                "maxCrawlPages": 1,
+                "crawlerType": "playwright:chrome",
+            },
+            wait_secs=60,
+        )
+    except ApifyApiError as e:
+        raise CrawlError(f"Apify API error crawling {url}: {e}") from e
+    except Exception as e:
+        raise CrawlError(f"Error calling Apify for {url}: {e}") from e
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        try:
-            response = await client.post(
-                endpoint,
-                params={"token": token},
-                json={
-                    "startUrls": [{"url": url}],
-                    "maxCrawlPages": 1,
-                    "crawlerType": "cheerio",
-                },
-            )
-            response.raise_for_status()
-            items = response.json()
-            if not items:
-                raise CrawlError("No content returned for the requested URL")
-            return items[0].get("text", items[0].get("markdown", ""))
-        except httpx.HTTPError as e:
-            raise CrawlError(f"HTTP error crawling {url}: {e}") from e
+    dataset_id = run.get("defaultDatasetId") if run else None
+    if not dataset_id:
+        raise CrawlError(f"No dataset returned from Apify for {url}")
+
+    try:
+        items_result = await client.dataset(dataset_id).list_items()
+        items = items_result.items if items_result else []
+    except Exception as e:
+        raise CrawlError(f"Error fetching Apify dataset for {url}: {e}") from e
+
+    if not items:
+        raise CrawlError(f"No content returned for URL: {url}")
+
+    return items[0].get("text", items[0].get("markdown", ""))
