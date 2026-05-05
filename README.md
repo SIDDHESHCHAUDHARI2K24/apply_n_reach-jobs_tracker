@@ -98,6 +98,54 @@ npm run dev
 
 Then open `http://localhost:3000`.
 
+## Docker Setup (Workers + Renderer)
+
+This repo includes Docker support for background processing services:
+
+- `worker`: runs `app.worker` for agent/extraction jobs
+- `renderer`: runs the LaTeX PDF rendering server on port `8001`
+
+The FastAPI API itself is currently intended to run locally via `uv run uvicorn ...` (not via `docker-compose`).
+
+### Prerequisites
+
+- Docker Desktop / Docker Engine with Compose enabled
+- A running PostgreSQL instance on your host machine
+- `backend/.env` configured (used by the `worker` container)
+
+### 1) Build and start containers
+
+From the repo root:
+
+```bash
+docker compose up --build -d
+```
+
+### 2) Check status and logs
+
+```bash
+docker compose ps
+docker compose logs -f worker
+docker compose logs -f renderer
+```
+
+### 3) Stop containers
+
+```bash
+docker compose down
+```
+
+### PostgreSQL host access notes
+
+`docker-compose.yml` is configured to connect containers to your host PostgreSQL via `host.docker.internal`.
+
+On local Postgres, ensure:
+
+- `postgresql.conf` has `listen_addresses = '*'`
+- `pg_hba.conf` allows Docker bridge ranges (example: `host all all 172.16.0.0/12 md5`)
+
+Adjust the `DATABASE_URL` values in `docker-compose.yml`/`backend/.env` to match your environment.
+
 ## Development Commands
 
 ### Backend
