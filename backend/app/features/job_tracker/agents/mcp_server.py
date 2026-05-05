@@ -6,6 +6,7 @@ object injected at runtime.
 """
 from __future__ import annotations
 
+import contextvars
 import io
 import json
 from dataclasses import dataclass
@@ -24,19 +25,21 @@ class AgentContext:
     opening_id: int
 
 
-# Global context holder — set by the runner before invoking the graph.
-_context: AgentContext | None = None
+# Per-task context: each asyncio Task (i.e. each background run) gets its own copy.
+_context_var: contextvars.ContextVar[AgentContext | None] = contextvars.ContextVar(
+    "agent_context", default=None
+)
 
 
 def set_context(ctx: AgentContext) -> None:
-    global _context
-    _context = ctx
+    _context_var.set(ctx)
 
 
 def get_context() -> AgentContext:
-    if _context is None:
+    ctx = _context_var.get()
+    if ctx is None:
         raise RuntimeError("Agent context not initialized")
-    return _context
+    return ctx
 
 
 def _record_to_dict(row: asyncpg.Record | None) -> dict | None:

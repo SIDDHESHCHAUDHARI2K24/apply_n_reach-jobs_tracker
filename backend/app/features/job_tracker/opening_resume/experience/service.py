@@ -1,4 +1,6 @@
 """Service functions for job_opening_experience section."""
+import json
+
 import asyncpg
 from fastapi import HTTPException, status
 
@@ -8,14 +10,29 @@ from app.features.job_tracker.opening_resume.experience.schemas import (
     ExperienceUpdate,
 )
 
+_JSONB_FIELDS = frozenset({"bullet_points", "work_sample_links"})
+
+
+def _parse_row(row: asyncpg.Record) -> dict:
+    """Deserialize JSONB columns that asyncpg may return as strings on RETURNING."""
+    d = dict(row)
+    for key in _JSONB_FIELDS:
+        if isinstance(d.get(key), str):
+            d[key] = json.loads(d[key])
+    return d
+
 
 def _build_update_query(table: str, where: dict, updates: dict) -> tuple[str, list]:
     """Build a parameterized UPDATE query without updated_at."""
     params = []
     set_parts = []
     for col, val in updates.items():
-        params.append(val)
-        set_parts.append(f"{col}=${len(params)}")
+        if col in _JSONB_FIELDS:
+            params.append(json.dumps(val) if val is not None else None)
+            set_parts.append(f"{col}=${len(params)}")
+        else:
+            params.append(val)
+            set_parts.append(f"{col}=${len(params)}")
 
     where_parts = []
     for col, val in where.items():
@@ -73,8 +90,8 @@ async def create_entry(
         """
         INSERT INTO job_opening_experience
             (resume_id, company, title, location, start_date, end_date,
-             is_current, description, display_order)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             is_current, description, bullet_points, work_sample_links, display_order)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
         """,
         resume_id,
@@ -85,6 +102,8 @@ async def create_entry(
         data.end_date,
         data.is_current,
         data.description,
+        json.dumps(data.bullet_points),
+        json.dumps(data.work_sample_links),
         data.display_order,
     )
 

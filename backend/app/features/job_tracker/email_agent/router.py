@@ -13,6 +13,7 @@ from fastapi.responses import StreamingResponse
 from app.features.auth.utils import get_current_user
 from app.features.core.config import get_settings
 from app.features.core.dependencies import DbDep
+from app.features.job_tracker.email_agent.runner import run_email_agent_stream
 from app.features.job_tracker.email_agent.schemas import (
     EmailAgentOutputResponse,
     EmailAgentResumeRequest,
@@ -116,8 +117,6 @@ async def _run_email_agent_background(
     """Background task that runs the email agent with its own DB connection."""
     conn = await asyncpg.connect(db_url)
     try:
-        from app.features.job_tracker.email_agent.runner import run_email_agent_stream
-
         async for event in run_email_agent_stream(
             conn, user_id, opening_id, run_id,
             recipient_type=recipient_type,
@@ -355,14 +354,14 @@ async def get_email_agent_output(
         """
         SELECT state, status
         FROM job_opening_email_agent_runs
-        WHERE opening_id=$1 AND user_id=$2 AND status='succeeded'
+        WHERE opening_id=$1 AND user_id=$2 AND status IN ('paused', 'succeeded')
         ORDER BY created_at DESC LIMIT 1
         """,
         opening_id, current_user["id"],
     )
 
     if not run:
-        raise HTTPException(status_code=404, detail="No succeeded email agent run found for this opening")
+        raise HTTPException(status_code=404, detail="No completed or paused email agent run found for this opening")
 
     state = run["state"]
     if isinstance(state, str):

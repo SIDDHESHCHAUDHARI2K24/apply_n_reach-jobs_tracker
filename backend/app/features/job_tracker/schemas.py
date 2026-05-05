@@ -13,7 +13,6 @@ class ExtractedJobDetails(BaseSchema):
     company_name: str | None = None
     location: str | None = None
     employment_type: str | None = None
-    salary_range: str | None = None
     description_summary: str | None = None
     required_skills: list[str] | None = None
     preferred_skills: list[str] | None = None

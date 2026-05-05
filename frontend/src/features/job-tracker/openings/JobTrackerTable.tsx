@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from 'react'
 import Link from 'next/link'
-import { Clock, FileText, Pencil, Trash2 } from 'lucide-react'
+import { ArrowUpRight, Clock, FileText, Pencil, Trash2 } from 'lucide-react'
 import { useJobOpenings } from './useJobOpenings'
 import { StatusHistoryDrawer } from './StatusHistoryDrawer'
 import type { OpeningStatus, JobOpening } from '@features/job-tracker/types'
@@ -167,12 +167,7 @@ export function JobTrackerTable() {
               <Fragment key={opening.id}>
                 <tr className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-slate-800">
-                    <Link
-                      href={`/job-tracker/${opening.id}`}
-                      className="hover:text-sky-600 hover:underline transition-colors"
-                    >
-                      {opening.company}
-                    </Link>
+                    {opening.company}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-700">{opening.role}</td>
                   <td className="px-4 py-3">
@@ -201,6 +196,14 @@ export function JobTrackerTable() {
                   <td className="px-4 py-3 text-sm text-slate-500">{new Date(opening.updated_at).toLocaleDateString()}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
+                      <Link
+                        href={`/job-openings/${opening.id}`}
+                        title="Open details"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs border border-slate-200 text-slate-600 hover:text-sky-600 hover:border-sky-200 hover:bg-sky-50 transition-colors"
+                      >
+                        <ArrowUpRight className="w-3 h-3" />
+                        Open
+                      </Link>
                       <button
                         title="Status History"
                         onClick={() => setHistoryOpeningId(opening.id)}

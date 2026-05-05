@@ -18,6 +18,7 @@ class ProjectResponse(BaseSchema):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     technologies: Optional[list[str]] = None
+    reference_links: list[str] = []
     display_order: int = 0
 
 
@@ -30,6 +31,7 @@ class ProjectCreate(BaseSchema):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     technologies: Optional[list[str]] = None
+    reference_links: list[str] = []
     display_order: int = 0
 
     @field_validator("name", mode="before")
@@ -67,6 +69,13 @@ class ProjectCreate(BaseSchema):
             raise ValueError("technologies must be a list")
         return [sanitize_text(t, max_length=255) for t in v]
 
+    @field_validator("reference_links", mode="before")
+    @classmethod
+    def sanitize_reference_links(cls, v):
+        if not isinstance(v, list):
+            raise ValueError("reference_links must be a list")
+        return [sanitize_text(str(item), max_length=2048) for item in v]
+
 
 class ProjectUpdate(BaseSchema):
     """Request schema for partial update of a job opening project entry."""
@@ -77,6 +86,7 @@ class ProjectUpdate(BaseSchema):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     technologies: Optional[list[str]] = None
+    reference_links: Optional[list[str]] = None
     display_order: Optional[int] = None
 
     @field_validator("name", mode="before")
@@ -115,3 +125,12 @@ class ProjectUpdate(BaseSchema):
         if not isinstance(v, list):
             raise ValueError("technologies must be a list")
         return [sanitize_text(t, max_length=255) for t in v]
+
+    @field_validator("reference_links", mode="before")
+    @classmethod
+    def sanitize_reference_links_upd(cls, v):
+        if v is None:
+            return None
+        if not isinstance(v, list):
+            raise ValueError("reference_links must be a list")
+        return [sanitize_text(str(item), max_length=2048) for item in v]

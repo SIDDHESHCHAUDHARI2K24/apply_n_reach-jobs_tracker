@@ -22,7 +22,16 @@ beforeEach(() => vi.clearAllMocks())
 describe('useIngestion', () => {
   it('starts extraction and loads details on success', async () => {
     mockApi.refreshExtraction.mockResolvedValueOnce({ run_id: 'r1' })
-    mockApi.getLatestExtracted.mockResolvedValueOnce({ id: 'e1', run_id: 'r1', company: 'ACME', role: 'SWE', raw_text: null, created_at: '' })
+    mockApi.getLatestExtracted.mockResolvedValueOnce({
+      id: 'e1',
+      run_id: 'r1',
+      company: 'ACME',
+      role: 'SWE',
+      location: null,
+      required_skills: [],
+      raw_text: null,
+      created_at: '',
+    })
     mockApi.getExtractionRuns.mockResolvedValueOnce([])
     const { useIngestion } = await import('./ingestion/useIngestion')
     const { result } = renderHook(() => useIngestion())

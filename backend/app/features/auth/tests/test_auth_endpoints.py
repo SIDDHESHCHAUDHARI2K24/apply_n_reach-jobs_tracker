@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.app import create_app
+from app.features.core.config import settings
 
 
 @pytest.mark.asyncio
@@ -70,4 +71,25 @@ async def test_reset_changes_password() -> None:
         json={"email": email, "password": new_password},
     )
     assert resp.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_preflight_uses_explicit_origin_with_credentials() -> None:
+    """CORS preflight should echo explicit origin when credentials are enabled."""
+    app = create_app()
+    client = TestClient(app)
+    origin = settings.allowed_origins[0]
+
+    resp = client.options(
+        "/auth/login",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert resp.status_code == 200
+    assert resp.headers["access-control-allow-origin"] == origin
+    assert resp.headers["access-control-allow-credentials"] == "true"
 

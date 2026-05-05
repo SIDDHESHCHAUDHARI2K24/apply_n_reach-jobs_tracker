@@ -300,7 +300,6 @@ CREATE TABLE job_opening_extracted_details_versions (
         company_name TEXT,
         location TEXT,
         employment_type TEXT,
-        salary_range TEXT,
         description_summary TEXT,
         required_skills JSONB,
         preferred_skills JSONB,
@@ -495,8 +494,8 @@ ALTER TABLE personal_details ADD COLUMN IF NOT EXISTS location TEXT;
 ALTER TABLE personal_details ADD COLUMN IF NOT EXISTS phone TEXT;
 
 -- h8i9j0k1l2m3: add research journal/year
-ALTER TABLE researches ADD COLUMN IF NOT EXISTS journal_name TEXT;
-ALTER TABLE researches ADD COLUMN IF NOT EXISTS publication_year TEXT;
+ALTER TABLE researches ADD COLUMN IF NOT EXISTS journal TEXT;
+ALTER TABLE researches ADD COLUMN IF NOT EXISTS year TEXT;
 
 -- i9j0k1l2m3n4: add projects technologies
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS technologies JSONB NOT NULL DEFAULT '[]';
@@ -505,8 +504,8 @@ ALTER TABLE projects ADD COLUMN IF NOT EXISTS technologies JSONB NOT NULL DEFAUL
 ALTER TABLE job_profile_personal_details ADD COLUMN IF NOT EXISTS summary TEXT;
 ALTER TABLE job_profile_personal_details ADD COLUMN IF NOT EXISTS location TEXT;
 ALTER TABLE job_profile_personal_details ADD COLUMN IF NOT EXISTS phone TEXT;
-ALTER TABLE job_profile_researches ADD COLUMN IF NOT EXISTS journal_name TEXT;
-ALTER TABLE job_profile_researches ADD COLUMN IF NOT EXISTS publication_year TEXT;
+ALTER TABLE job_profile_researches ADD COLUMN IF NOT EXISTS journal TEXT;
+ALTER TABLE job_profile_researches ADD COLUMN IF NOT EXISTS year TEXT;
 ALTER TABLE job_profile_projects ADD COLUMN IF NOT EXISTS technologies JSONB NOT NULL DEFAULT '[]';
 
 -- j0j1k2l3m4n5: add email agent runs table
@@ -528,4 +527,23 @@ CREATE TABLE IF NOT EXISTS job_opening_email_agent_runs (
 CREATE INDEX IF NOT EXISTS ix_email_agent_runs_opening ON job_opening_email_agent_runs(opening_id);
 
 UPDATE alembic_version SET version_num='j0j1k2l3m4n5' WHERE alembic_version.version_num = 'e5f6a7b8c9d0';
+
+-- m1n2o3p4q5r6: drop salary_range from extracted details
+ALTER TABLE job_opening_extracted_details_versions DROP COLUMN IF EXISTS salary_range;
+
+UPDATE alembic_version SET version_num='m1n2o3p4q5r6' WHERE alembic_version.version_num = 'j0j1k2l3m4n5';
+
+-- n3o4p5q6r7s8: opening resume section JSONB parity
+ALTER TABLE job_opening_education
+    ADD COLUMN IF NOT EXISTS bullet_points JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE job_opening_education
+    ADD COLUMN IF NOT EXISTS reference_links JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE job_opening_experience
+    ADD COLUMN IF NOT EXISTS bullet_points JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE job_opening_experience
+    ADD COLUMN IF NOT EXISTS work_sample_links JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE job_opening_projects
+    ADD COLUMN IF NOT EXISTS reference_links JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+UPDATE alembic_version SET version_num='n3o4p5q6r7s8' WHERE alembic_version.version_num = 'm1n2o3p4q5r6';
 

@@ -306,23 +306,23 @@ async def main():
             """
             INSERT INTO job_opening_extracted_details_versions (
                 run_id, opening_id, schema_version,
-                job_title, company_name, location, employment_type, salary_range,
+                job_title, company_name, location, employment_type,
                 description_summary, required_skills, preferred_skills,
                 experience_level, posted_date, application_deadline,
                 raw_payload, extractor_model, source_url,
                 role_summary, technical_keywords, sector_keywords,
                 business_sectors, problem_being_solved, useful_experiences
             ) VALUES (
-                $1,$2,2,$3,$4,$5,$6,$7,$8,
-                $9::jsonb,$10::jsonb,
-                $11,$12,$13,
-                $14::jsonb,$15,$16,
-                $17,$18::jsonb,$19::jsonb,$20::jsonb,$21,$22::jsonb
+                $1,$2,2,$3,$4,$5,$6,$7,
+                $8::jsonb,$9::jsonb,
+                $10,$11,$12,
+                $13::jsonb,$14,$15,
+                $16,$17::jsonb,$18::jsonb,$19::jsonb,$20,$21::jsonb
             )
             """,
             ext_run["id"], opening_id,
             extracted.job_title, extracted.company_name, extracted.location,
-            extracted.employment_type, extracted.salary_range, extracted.description_summary,
+            extracted.employment_type, extracted.description_summary,
             json.dumps(extracted.required_skills or []),
             json.dumps(extracted.preferred_skills or []),
             extracted.experience_level, extracted.posted_date, extracted.application_deadline,

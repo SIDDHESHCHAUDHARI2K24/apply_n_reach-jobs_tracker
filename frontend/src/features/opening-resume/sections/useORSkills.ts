@@ -1,5 +1,9 @@
 import { useState, useCallback, useEffect } from 'react'
 import { openingResumeApi } from '@features/opening-resume/openingResumeApi'
+import {
+  OPENING_RESUME_REFRESH_EVENT,
+  type OpeningResumeRefreshDetail,
+} from '@features/opening-resume/openingResumeEvents'
 import { HttpError } from '@core/http/client'
 import type { ORSkillItem } from '@features/opening-resume/types'
 
@@ -9,14 +13,34 @@ export function useORSkills(openingId: string) {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  const loadSkills = useCallback(() => {
     setIsLoading(true)
-    openingResumeApi.getSkills(openingId)
-      .then(items => { if (!cancelled) { setSkills(items); setIsLoading(false) } })
-      .catch(err => { if (!cancelled) { setError(err instanceof HttpError ? err.message : 'Failed to load'); setIsLoading(false) } })
-    return () => { cancelled = true }
+    setError(null)
+    openingResumeApi
+      .getSkills(openingId)
+      .then(items => {
+        setSkills(items)
+        setIsLoading(false)
+      })
+      .catch(err => {
+        setError(err instanceof HttpError ? err.message : 'Failed to load')
+        setIsLoading(false)
+      })
   }, [openingId])
+
+  useEffect(() => {
+    loadSkills()
+  }, [loadSkills])
+
+  useEffect(() => {
+    function onOpeningResumeRefresh(ev: Event) {
+      const ce = ev as CustomEvent<OpeningResumeRefreshDetail>
+      if (ce.detail?.openingId !== openingId) return
+      loadSkills()
+    }
+    window.addEventListener(OPENING_RESUME_REFRESH_EVENT, onOpeningResumeRefresh as EventListener)
+    return () => window.removeEventListener(OPENING_RESUME_REFRESH_EVENT, onOpeningResumeRefresh as EventListener)
+  }, [openingId, loadSkills])
 
   const create = useCallback(async (payload: Omit<ORSkillItem, 'id' | 'resume_id'>) => {
     setIsSaving(true)

@@ -1,9 +1,17 @@
 """Router for job_tracker openings_core endpoints."""
-import asyncpg
-from fastapi import APIRouter, Depends, Query, Response, status
+import logging
 
+import asyncpg
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Response, status
+
+from app.features.core.config import get_settings
 from app.features.core.dependencies import DbDep
 from app.features.auth.utils import get_current_user
+from app.features.job_tracker.opening_ingestion.service import (
+    check_in_flight,
+    enqueue_extraction,
+    run_extraction,
+)
 from app.features.job_tracker.openings_core import service
 from app.features.job_tracker.openings_core.schemas import (
     OpeningCreate,
@@ -17,6 +25,7 @@ from app.features.job_tracker.openings_core.schemas import (
 )
 
 router = APIRouter(tags=["job-openings"])
+logger = logging.getLogger(__name__)
 
 
 def _row_to_response(row: asyncpg.Record) -> OpeningResponse:
@@ -27,10 +36,33 @@ def _row_to_response(row: asyncpg.Record) -> OpeningResponse:
 @router.post("/job-openings", status_code=201, response_model=OpeningResponse)
 async def create_job_opening(
     data: OpeningCreate,
+    background_tasks: BackgroundTasks,
     conn: asyncpg.Connection = DbDep,
     current_user: asyncpg.Record = Depends(get_current_user),
 ) -> OpeningResponse:
     row = await service.create_opening(conn, current_user["id"], data)
+
+    # Auto-trigger extraction for new openings that include a source URL.
+    # This is best-effort and must not block successful opening creation.
+    if row["source_url"]:
+        try:
+            opening_id = row["id"]
+            if not await check_in_flight(conn, opening_id):
+                run = await enqueue_extraction(conn, opening_id)
+                settings = get_settings()
+                background_tasks.add_task(
+                    run_extraction,
+                    opening_id,
+                    run["id"],
+                    settings.database_url,
+                )
+        except Exception:
+            logger.warning(
+                "Auto extraction enqueue failed for opening %s",
+                row["id"],
+                exc_info=True,
+            )
+
     return _row_to_response(row)
 
 

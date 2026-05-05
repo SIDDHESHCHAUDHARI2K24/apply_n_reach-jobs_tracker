@@ -115,7 +115,7 @@ def create_app() -> FastAPI:
             content={"detail": str(exc.errors()), "code": 422},
         )
 
-    allow_origins = ["*"]
+    allow_origins = settings.allowed_origins
 
     app.add_middleware(
         CORSMiddleware,

@@ -27,7 +27,6 @@ CREATE TABLE IF NOT EXISTS job_opening_extracted_details_versions (
     company_name         TEXT,
     location             TEXT,
     employment_type      TEXT,
-    salary_range         TEXT,
     description_summary  TEXT,
     required_skills      JSONB,
     preferred_skills     JSONB,

@@ -106,3 +106,7 @@ export type JobOpeningStatusTransitionRequest = ApiSchemas['StatusTransitionRequ
 export type JobOpeningStatusHistoryEntry = ApiSchemas['StatusHistoryEntry']
 export type ExtractionRunResponse = ApiSchemas['ExtractionRunResponse']
 export type ExtractedDetailsResponse = ApiSchemas['ExtractedDetailsResponse']
+export type ManualExtractedDetailsCreate = ApiSchemas['ManualExtractedDetailsCreate']
+
+export type RenderedOpeningResumeResponse = ApiSchemas['RenderedOpeningResumeResponse']
+export type OpeningResumeRenderRequest = ApiSchemas['app__features__job_tracker__opening_resume__latex_resume__schemas__RenderResumeRequest']

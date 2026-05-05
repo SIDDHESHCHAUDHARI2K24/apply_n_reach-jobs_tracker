@@ -73,13 +73,11 @@ async def create_opening_resume(
         resume_id = resume["id"]
 
         # Copy personal — map job_profile_personal_details -> job_opening_personal
-        # Columns available: full_name, email, linkedin_url, github_url, portfolio_url
-        # job_opening_personal also has: phone, location, summary (not in source)
         await conn.execute(
             """
             INSERT INTO job_opening_personal
                 (resume_id, full_name, email, phone, location, linkedin_url, github_url, portfolio_url, summary)
-            SELECT $1, full_name, email, NULL, NULL, linkedin_url, github_url, portfolio_url, NULL
+            SELECT $1, full_name, email, phone, location, linkedin_url, github_url, portfolio_url, summary
             FROM job_profile_personal_details
             WHERE job_profile_id=$2
             """,
@@ -88,13 +86,14 @@ async def create_opening_resume(
         )
 
         # Copy education — map job_profile_educations -> job_opening_education
-        # Source cols: university_name, major, degree_type, start_month_year, end_month_year
-        # Target cols: institution, degree, field_of_study, start_date, end_date, grade, description
         await conn.execute(
             """
             INSERT INTO job_opening_education
-                (resume_id, institution, degree, field_of_study, start_date, end_date, grade, description, display_order)
-            SELECT $1, university_name, degree_type, major, start_month_year, end_month_year, NULL, NULL, 0
+                (resume_id, institution, degree, field_of_study, start_date, end_date, grade, description,
+                 bullet_points, reference_links, display_order)
+            SELECT $1, university_name, degree_type, major, start_month_year, end_month_year, NULL, NULL,
+                   COALESCE(bullet_points, '[]'::jsonb), COALESCE(reference_links, '[]'::jsonb),
+                   ROW_NUMBER() OVER (ORDER BY id) - 1
             FROM job_profile_educations
             WHERE job_profile_id=$2
             """,
@@ -103,14 +102,15 @@ async def create_opening_resume(
         )
 
         # Copy experience — map job_profile_experiences -> job_opening_experience
-        # Source cols: role_title, company_name, start_month_year, end_month_year, context
-        # Target cols: company, title, location, start_date, end_date, is_current, description
         await conn.execute(
             """
             INSERT INTO job_opening_experience
-                (resume_id, company, title, location, start_date, end_date, is_current, description, display_order)
+                (resume_id, company, title, location, start_date, end_date, is_current, description,
+                 bullet_points, work_sample_links, display_order)
             SELECT $1, company_name, role_title, location, start_month_year, end_month_year,
-                   (end_month_year IS NULL), context, 0
+                   (end_month_year IS NULL), context,
+                   COALESCE(bullet_points, '[]'::jsonb), COALESCE(work_sample_links, '[]'::jsonb),
+                   ROW_NUMBER() OVER (ORDER BY id) - 1
             FROM job_profile_experiences
             WHERE job_profile_id=$2
             """,
@@ -119,13 +119,16 @@ async def create_opening_resume(
         )
 
         # Copy projects — map job_profile_projects -> job_opening_projects
-        # Source cols: project_name, description, start_month_year, end_month_year, reference_links(JSONB)
-        # Target cols: name, description, url, start_date, end_date, technologies(JSONB)
         await conn.execute(
             """
             INSERT INTO job_opening_projects
-                (resume_id, name, description, url, start_date, end_date, technologies, display_order)
-            SELECT $1, project_name, description, NULL, start_month_year, end_month_year, NULL, 0
+                (resume_id, name, description, url, start_date, end_date, technologies, reference_links,
+                 display_order)
+            SELECT $1, project_name, description,
+                   (SELECT lnk FROM jsonb_array_elements_text(COALESCE(reference_links, '[]'::jsonb)) AS t(lnk) LIMIT 1),
+                   start_month_year, end_month_year, technologies,
+                   COALESCE(reference_links, '[]'::jsonb),
+                   ROW_NUMBER() OVER (ORDER BY id) - 1
             FROM job_profile_projects
             WHERE job_profile_id=$2
             """,
@@ -133,14 +136,13 @@ async def create_opening_resume(
             source_job_profile_id,
         )
 
-        # Copy research — map job_profile_researches -> job_opening_research
-        # Source cols: paper_name, publication_link, description
-        # Target cols: title, publication, published_date, url, description
+        # Copy research — journal/year -> publication/published_date for template parity
         await conn.execute(
             """
             INSERT INTO job_opening_research
                 (resume_id, title, publication, published_date, url, description, display_order)
-            SELECT $1, paper_name, NULL, NULL, publication_link, description, 0
+            SELECT $1, paper_name, journal, year, publication_link, description,
+                   ROW_NUMBER() OVER (ORDER BY id) - 1
             FROM job_profile_researches
             WHERE job_profile_id=$2
             """,
@@ -149,13 +151,12 @@ async def create_opening_resume(
         )
 
         # Copy certifications — map job_profile_certifications -> job_opening_certifications
-        # Source cols: certification_name, verification_link
-        # Target cols: name, issuer, issue_date, expiry_date, credential_id, url
         await conn.execute(
             """
             INSERT INTO job_opening_certifications
                 (resume_id, name, issuer, issue_date, expiry_date, credential_id, url, display_order)
-            SELECT $1, certification_name, NULL, NULL, NULL, NULL, verification_link, 0
+            SELECT $1, certification_name, NULL, NULL, NULL, NULL, verification_link,
+                   ROW_NUMBER() OVER (ORDER BY id) - 1
             FROM job_profile_certifications
             WHERE job_profile_id=$2
             """,

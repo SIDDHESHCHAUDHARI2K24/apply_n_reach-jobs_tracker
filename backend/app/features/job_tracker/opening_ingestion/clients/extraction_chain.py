@@ -39,8 +39,10 @@ async def extract_job_details(
         llm_base = get_chat_llm(temperature=0)
         model = llm_base.with_structured_output(ExtractedJobDetails)
 
-        url_context = f"\nSource URL: {source_url}" if source_url else ""
-        human_template = "{text}" + url_context
+        if source_url:
+            human_template = "{text}\nSource URL: {source_url}"
+        else:
+            human_template = "{text}"
 
         prompt = ChatPromptTemplate.from_messages([
             (
@@ -76,7 +78,10 @@ async def extract_job_details(
             metadata=metadata,
         )
 
-        result = await chain.ainvoke({"text": raw_text[:8000]})
+        invoke_input: dict[str, Any] = {"text": raw_text[:8000]}
+        if source_url:
+            invoke_input["source_url"] = source_url
+        result = await chain.ainvoke(invoke_input)
 
         if not isinstance(result, ExtractedJobDetails):
             raise ExtractionError(f"Unexpected extraction result type: {type(result)}")

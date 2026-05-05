@@ -1,5 +1,18 @@
+import { API_BASE_URL } from '@core/config/env'
 import { apiRequest } from '@core/http/client'
-import type { JobOpening, CreateOpeningRequest, StatusHistoryEntry, ExtractionRun, ExtractedDetails } from './types'
+import type {
+  JobOpening,
+  CreateOpeningRequest,
+  StatusHistoryEntry,
+  ExtractionRun,
+  ExtractedDetails,
+  EmailAgentStartRequest,
+  EmailAgentRunResponse,
+  EmailAgentStatusResponse,
+  EmailAgentRunListItem,
+  EmailAgentResumeRequest,
+  EmailAgentOutputResponse,
+} from './types'
 import type {
   ExtractedDetailsResponse,
   ExtractionRunResponse,
@@ -9,6 +22,7 @@ import type {
   JobOpeningStatus,
   JobOpeningStatusHistoryEntry,
   JobOpeningUpdate,
+  ManualExtractedDetailsCreate,
 } from '@generated/contracts'
 
 const toStringId = (id: number) => String(id)
@@ -79,8 +93,63 @@ function mapExtractedDetails(row: ExtractedDetailsResponse): ExtractedDetails {
     run_id: String(row.extraction_run_id),
     company: row.company_name ?? null,
     role: row.job_title ?? null,
+    location: row.location ?? null,
+    required_skills: row.required_skills ?? [],
     raw_text: row.description_summary ?? null,
     created_at: row.extracted_at,
+  }
+}
+
+function mapEmailAgentRunResponse(row: { run_id: number; opening_id: number; status: string; message: string }): EmailAgentRunResponse {
+  return {
+    run_id: toStringId(row.run_id),
+    opening_id: toStringId(row.opening_id),
+    status: row.status,
+    message: row.message,
+  }
+}
+
+function mapEmailAgentStatus(row: {
+  run_id: number | null
+  opening_id: number
+  agent_status: string
+  current_node: string | null
+  events?: Record<string, unknown>[]
+  error_message: string | null
+  started_at: string | null
+  completed_at: string | null
+}): EmailAgentStatusResponse {
+  return {
+    run_id: row.run_id == null ? null : toStringId(row.run_id),
+    opening_id: toStringId(row.opening_id),
+    agent_status: row.agent_status,
+    current_node: row.current_node,
+    events: row.events ?? [],
+    error_message: row.error_message,
+    started_at: row.started_at,
+    completed_at: row.completed_at,
+  }
+}
+
+function mapEmailAgentRunListItem(row: {
+  id: number
+  opening_id: number
+  status: string
+  current_node: string | null
+  error_message: string | null
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+}): EmailAgentRunListItem {
+  return {
+    id: toStringId(row.id),
+    opening_id: toStringId(row.opening_id),
+    status: row.status,
+    current_node: row.current_node,
+    error_message: row.error_message,
+    started_at: row.started_at,
+    completed_at: row.completed_at,
+    created_at: row.created_at,
   }
 }
 
@@ -122,7 +191,7 @@ export const jobTrackerApi = {
       } satisfies JobOpeningUpdate,
     }).then(mapOpening),
   remove: (id: string) =>
-    apiRequest<void>(`/job-openings/${id}`, { method: 'DELETE' }),
+    apiRequest<void>(`/job-openings/${id}?confirm=true`, { method: 'DELETE' }),
   transitionStatus: (id: string, status: string) =>
     apiRequest<JobOpeningResponse>(`/job-openings/${id}/status`, {
       method: 'POST',
@@ -139,7 +208,81 @@ export const jobTrackerApi = {
   getExtractionRuns: (openingId: string) =>
     apiRequest<ExtractionRunResponse[]>(`/job-openings/${openingId}/extraction-runs`).then(rows => rows.map(mapExtractionRun)),
 
+  saveManualExtractedDetails: (openingId: string, body: ManualExtractedDetailsCreate) =>
+    apiRequest<ExtractedDetailsResponse>(`/job-openings/${openingId}/extracted-details/manual`, {
+      method: 'POST',
+      body,
+    }).then(mapExtractedDetails),
+
   // Opening resume check
   getOpeningResume: (openingId: string) =>
     apiRequest<{ id: number }>(`/job-openings/${openingId}/resume`).then(result => ({ id: String(result.id) })),
+
+  // Email agent
+  startEmailAgentRun: (openingId: string, payload: EmailAgentStartRequest) =>
+    apiRequest<{ run_id: number; opening_id: number; status: string; message: string }>(
+      `/job-openings/${openingId}/email-agent/run`,
+      {
+        method: 'POST',
+        body: payload,
+      },
+    ).then(mapEmailAgentRunResponse),
+  getEmailAgentStatus: (openingId: string) =>
+    apiRequest<{
+      run_id: number | null
+      opening_id: number
+      agent_status: string
+      current_node: string | null
+      events?: Record<string, unknown>[]
+      error_message: string | null
+      started_at: string | null
+      completed_at: string | null
+    }>(`/job-openings/${openingId}/email-agent/status`).then(mapEmailAgentStatus),
+  getEmailAgentRuns: (openingId: string) =>
+    apiRequest<Array<{
+      id: number
+      opening_id: number
+      status: string
+      current_node: string | null
+      error_message: string | null
+      started_at: string | null
+      completed_at: string | null
+      created_at: string
+    }>>(`/job-openings/${openingId}/email-agent/runs`).then(rows => rows.map(mapEmailAgentRunListItem)),
+  resumeEmailAgent: (openingId: string, payload: EmailAgentResumeRequest) =>
+    apiRequest<{ run_id: number; status: string; message: string }>(
+      `/job-openings/${openingId}/email-agent/resume`,
+      {
+        method: 'POST',
+        body: payload,
+      },
+    ).then(result => ({ run_id: toStringId(result.run_id), status: result.status, message: result.message })),
+  getEmailAgentOutput: (openingId: string) =>
+    apiRequest<EmailAgentOutputResponse>(`/job-openings/${openingId}/email-agent/output`),
+  getEmailAgentStreamUrl: (openingId: string) => {
+    const encodedId = encodeURIComponent(openingId)
+    return `${API_BASE_URL}/job-openings/${encodedId}/email-agent/stream`
+  },
+
+  /** Resume tailoring LangGraph agent */
+  startResumeAgent: (openingId: string) =>
+    apiRequest<{ run_id: number; opening_id: number; status: string; message: string }>(
+      `/job-openings/${openingId}/agent/run`,
+      { method: 'POST' },
+    ).then(mapEmailAgentRunResponse),
+  getResumeAgentStatus: (openingId: string) =>
+    apiRequest<{
+      run_id: number | null
+      opening_id: number
+      agent_status: string
+      current_node: string | null
+      events?: Record<string, unknown>[]
+      error_message: string | null
+      started_at: string | null
+      completed_at: string | null
+    }>(`/job-openings/${openingId}/agent/status`).then(mapEmailAgentStatus),
+  getResumeAgentStreamUrl: (openingId: string) => {
+    const encodedId = encodeURIComponent(openingId)
+    return `${API_BASE_URL}/job-openings/${encodedId}/agent/stream`
+  },
 }

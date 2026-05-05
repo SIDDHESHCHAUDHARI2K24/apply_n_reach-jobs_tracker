@@ -36,8 +36,9 @@ Extract the following fields:
 | `company_name` | Company name |
 | `location` | City, state/country; include remote policy (Remote / Hybrid / On-site) |
 | `employment_type` | Full-time / Part-time / Contract / Internship |
-| `salary_range` | If disclosed; null otherwise |
 | `experience_level` | Entry / Mid / Senior / Staff / Principal / Director — infer from years, title, and responsibilities |
+
+**Compensation / perks:** Do **not** populate a dedicated salary field. If pay or benefits are mentioned, reflect them briefly inside `description_summary` or `role_summary` as natural language, not as a separate structured salary value.
 
 ### Step 3 — Summarize the role and problem context
 Write these in your own words, not copied from the posting:
@@ -82,7 +83,6 @@ Call `update_agent_state` with a JSON object containing:
   "company_name": "string",
   "location": "string",
   "employment_type": "string",
-  "salary_range": "string | null",
   "experience_level": "Entry | Mid | Senior | Staff | Principal | Director",
   "description_summary": "string",
   "role_summary": "string",

@@ -11,6 +11,7 @@ from app.features.job_tracker.opening_ingestion.schemas import (
     ExtractedDetailsResponse,
     ExtractionRefreshResponse,
     ExtractionRunResponse,
+    ManualExtractedDetailsCreate,
 )
 from app.features.job_tracker.opening_ingestion.service import (
     check_in_flight,
@@ -18,9 +19,43 @@ from app.features.job_tracker.opening_ingestion.service import (
     get_latest_extracted_details,
     list_extraction_runs,
     run_extraction,
+    save_manual_extracted_details,
 )
 
 router = APIRouter(tags=["job-openings-extraction"])
+
+
+def _extracted_row_to_response(row) -> ExtractedDetailsResponse:
+    def _parse_jsonb_list(val):
+        return json.loads(val) if isinstance(val, str) else val
+
+    required_skills = _parse_jsonb_list(row["required_skills"])
+    preferred_skills = _parse_jsonb_list(row["preferred_skills"])
+    technical_keywords = _parse_jsonb_list(row["technical_keywords"])
+    sector_keywords = _parse_jsonb_list(row["sector_keywords"])
+    business_sectors = _parse_jsonb_list(row["business_sectors"])
+    useful_experiences = _parse_jsonb_list(row["useful_experiences"])
+
+    jsonb_list_fields = {
+        "required_skills", "preferred_skills",
+        "technical_keywords", "sector_keywords",
+        "business_sectors", "useful_experiences",
+    }
+
+    return ExtractedDetailsResponse(
+        **{
+            k: v
+            for k, v in dict(row).items()
+            if k not in jsonb_list_fields | {"id", "version_id"}
+        },
+        required_skills=required_skills,
+        preferred_skills=preferred_skills,
+        technical_keywords=technical_keywords,
+        sector_keywords=sector_keywords,
+        business_sectors=business_sectors,
+        useful_experiences=useful_experiences,
+        extraction_run_id=row["run_id"],
+    )
 
 
 @router.post(
@@ -73,38 +108,25 @@ async def get_extracted_details(
 ) -> ExtractedDetailsResponse:
     """Get the most recent succeeded extraction snapshot for a job opening."""
     row = await get_latest_extracted_details(conn, current_user["id"], opening_id)
+    return _extracted_row_to_response(row)
 
-    # Handle JSONB fields (asyncpg returns str from RETURNING; plain SELECT returns list/dict)
-    def _parse_jsonb_list(val):
-        return json.loads(val) if isinstance(val, str) else val
 
-    required_skills = _parse_jsonb_list(row["required_skills"])
-    preferred_skills = _parse_jsonb_list(row["preferred_skills"])
-    technical_keywords = _parse_jsonb_list(row["technical_keywords"])
-    sector_keywords = _parse_jsonb_list(row["sector_keywords"])
-    business_sectors = _parse_jsonb_list(row["business_sectors"])
-    useful_experiences = _parse_jsonb_list(row["useful_experiences"])
-
-    jsonb_list_fields = {
-        "required_skills", "preferred_skills",
-        "technical_keywords", "sector_keywords",
-        "business_sectors", "useful_experiences",
-    }
-
-    return ExtractedDetailsResponse(
-        **{
-            k: v
-            for k, v in dict(row).items()
-            if k not in jsonb_list_fields | {"id", "version_id"}
-        },
-        required_skills=required_skills,
-        preferred_skills=preferred_skills,
-        technical_keywords=technical_keywords,
-        sector_keywords=sector_keywords,
-        business_sectors=business_sectors,
-        useful_experiences=useful_experiences,
-        extraction_run_id=row["run_id"],
+@router.post(
+    "/job-openings/{opening_id}/extracted-details/manual",
+    status_code=201,
+    response_model=ExtractedDetailsResponse,
+)
+async def create_manual_extracted_details(
+    opening_id: int,
+    payload: ManualExtractedDetailsCreate,
+    conn: asyncpg.Connection = DbDep,
+    current_user: asyncpg.Record = Depends(get_current_user),
+) -> ExtractedDetailsResponse:
+    """Save user-entered job details as a succeeded extraction snapshot for the resume agent."""
+    row = await save_manual_extracted_details(
+        conn, current_user["id"], opening_id, payload
     )
+    return _extracted_row_to_response(row)
 
 
 @router.get(

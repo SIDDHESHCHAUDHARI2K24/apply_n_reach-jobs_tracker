@@ -1,4 +1,4 @@
-import { apiRequest } from '@core/http/client'
+import { apiRequest, apiRequestBlob } from '@core/http/client'
 import type {
   OpeningResume,
   ORCertification,
@@ -8,6 +8,7 @@ import type {
   ORProject,
   ORResearch,
   ORSkillItem,
+  OpeningResumeRenderMetadata,
 } from './types'
 import type {
   OpeningResumeCertificationResponse,
@@ -18,6 +19,7 @@ import type {
   OpeningResumeResearchResponse,
   OpeningResumeResponse,
   OpeningResumeSkillResponse,
+  RenderedOpeningResumeResponse,
 } from '@generated/contracts'
 
 const base = (openingId: string) => `/job-openings/${openingId}/resume`
@@ -113,6 +115,14 @@ const mapSkill = (row: OpeningResumeSkillResponse): ORSkillItem => ({
   name: row.name,
   proficiency_level: row.proficiency_level ?? null,
   display_order: row.display_order,
+})
+
+const mapRenderMetadata = (row: RenderedOpeningResumeResponse): OpeningResumeRenderMetadata => ({
+  resume_id: asId(row.resume_id),
+  template_name: row.template_name,
+  updated_at: row.updated_at,
+  latex_length: row.latex_length,
+  pdf_size_bytes: row.pdf_size_bytes,
 })
 
 export const openingResumeApi = {
@@ -325,4 +335,21 @@ export const openingResumeApi = {
     }).then(mapSkill),
   deleteSkill: (openingId: string, entryId: string) =>
     apiRequest<void>(`${base(openingId)}/skills/${entryId}`, { method: 'DELETE' }),
+
+  // Render
+  triggerRender: async (openingId: string) => {
+    const row = await apiRequest<RenderedOpeningResumeResponse>(
+      `${base(openingId)}/latex-resume/render`,
+      { method: 'POST' }
+    )
+    return mapRenderMetadata(row)
+  },
+  getRenderMetadata: async (openingId: string) => {
+    const row = await apiRequest<RenderedOpeningResumeResponse>(
+      `${base(openingId)}/latex-resume`
+    )
+    return mapRenderMetadata(row)
+  },
+  downloadPdf: (openingId: string) =>
+    apiRequestBlob(`${base(openingId)}/latex-resume/pdf`),
 }

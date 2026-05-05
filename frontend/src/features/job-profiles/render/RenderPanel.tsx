@@ -1,4 +1,4 @@
-import { FileText, Play, Download, ExternalLink, AlertCircle } from 'lucide-react'
+import { FileText, Play, Download, AlertCircle } from 'lucide-react'
 import { useJPLatexRender } from './useJPLatexRender'
 
 interface Props { jobProfileId: string }
@@ -8,7 +8,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function RenderPanel({ jobProfileId }: Props) {
-  const { metadata, isRendering, error, timedOut, triggerRender, downloadPdf, openPdfInTab } = useJPLatexRender(jobProfileId)
+  const { metadata, isRendering, error, timedOut, triggerRender, downloadPdf } = useJPLatexRender(jobProfileId)
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
@@ -66,13 +66,6 @@ export function RenderPanel({ jobProfileId }: Props) {
             >
               <Download size={14} />
               Download PDF
-            </button>
-            <button
-              onClick={openPdfInTab}
-              className="flex items-center justify-center gap-2 w-full px-3 py-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 text-sm font-medium rounded-lg transition-colors"
-            >
-              <ExternalLink size={14} />
-              Open in New Tab
             </button>
           </>
         )}

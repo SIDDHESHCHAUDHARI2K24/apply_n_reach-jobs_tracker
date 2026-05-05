@@ -86,10 +86,10 @@ EXTRACTED_DETAILS = {
     "company_name": "Acme Intelligence",
     "location": "San Francisco CA (Hybrid)",
     "employment_type": "Full-time",
-    "salary_range": "$180k–$220k + equity",
     "description_summary": (
         "AI Platform team building scalable APIs and micro-services for LLM inference "
-        "pipeline, developer SDK, and real-time data ingestion."
+        "pipeline, developer SDK, and real-time data ingestion. Compensation discussed in posting: "
+        "$180k–$220k + equity + benefits."
     ),
     "required_skills": [
         "Python", "FastAPI", "asyncio", "Pydantic v2", "PostgreSQL", "asyncpg",
@@ -374,7 +374,7 @@ async def setup_demo_data(conn) -> tuple[int, int, int]:
         """
         INSERT INTO job_opening_extracted_details_versions (
             run_id, opening_id, schema_version,
-            job_title, company_name, location, employment_type, salary_range,
+            job_title, company_name, location, employment_type,
             description_summary, required_skills, preferred_skills,
             experience_level, posted_date, application_deadline,
             raw_payload, extractor_model, source_url,
@@ -382,17 +382,17 @@ async def setup_demo_data(conn) -> tuple[int, int, int]:
             business_sectors, problem_being_solved, useful_experiences
         ) VALUES (
             $1, $2, 2,
-            $3, $4, $5, $6, $7,
-            $8, $9::jsonb, $10::jsonb,
-            $11, $12, $13,
-            $14::jsonb, $15, $16,
-            $17, $18::jsonb, $19::jsonb,
-            $20::jsonb, $21, $22::jsonb
+            $3, $4, $5, $6,
+            $7, $8::jsonb, $9::jsonb,
+            $10, $11, $12,
+            $13::jsonb, $14, $15,
+            $16, $17::jsonb, $18::jsonb,
+            $19::jsonb, $20, $21::jsonb
         )
         """,
         extraction_run_id, opening_id,
         e["job_title"], e["company_name"], e["location"],
-        e["employment_type"], e["salary_range"],
+        e["employment_type"],
         e["description_summary"],
         json.dumps(e["required_skills"]),
         json.dumps(e["preferred_skills"]),

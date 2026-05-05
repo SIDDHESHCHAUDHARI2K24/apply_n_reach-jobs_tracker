@@ -528,6 +528,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/profile/import/linkedin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Linkedin Profile
+         * @description Import a LinkedIn profile, replacing all user_profile sections.
+         */
+        post: operations["import_linkedin_profile_profile_import_linkedin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/job-profiles": {
         parameters: {
             query?: never;
@@ -1012,6 +1032,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/job-profiles/{job_profile_id}/status/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activate Job Profile
+         * @description Activate a draft or archived job profile.
+         */
+        post: operations["activate_job_profile_job_profiles__job_profile_id__status_activate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/job-profiles/{job_profile_id}/status/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive Job Profile
+         * @description Archive an active or draft job profile.
+         */
+        post: operations["archive_job_profile_job_profiles__job_profile_id__status_archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/job-profiles/{job_profile_id}/latex-resume/render": {
         parameters: {
             query?: never;
@@ -1179,6 +1239,26 @@ export interface paths {
         get: operations["get_extracted_details_job_openings__opening_id__extracted_details_latest_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/job-openings/{opening_id}/extracted-details/manual": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Manual Extracted Details
+         * @description Save user-entered job details as a succeeded extraction snapshot for the resume agent.
+         */
+        post: operations["create_manual_extracted_details_job_openings__opening_id__extracted_details_manual_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1523,10 +1603,412 @@ export interface paths {
         patch: operations["update_skill_job_openings__opening_id__resume_skills__entry_id__patch"];
         trace?: never;
     };
+    "/job-openings/{opening_id}/agent/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Agent Run
+         * @description Start a new agent run for an opening. Returns 202 Accepted.
+         *
+         *     Returns 409 if an agent run is already in progress.
+         */
+        post: operations["start_agent_run_job_openings__opening_id__agent_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/job-openings/{opening_id}/agent/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream Agent Events
+         * @description SSE endpoint for streaming agent events.
+         *
+         *     Polls the agent_runs table and yields new events as SSE messages.
+         *     Includes a heartbeat every 5 seconds.
+         */
+        get: operations["stream_agent_events_job_openings__opening_id__agent_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/job-openings/{opening_id}/agent/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Agent Status
+         * @description Get the current agent status for an opening.
+         */
+        get: operations["get_agent_status_job_openings__opening_id__agent_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/job-openings/{opening_id}/agent/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Agent Runs
+         * @description List all agent runs for an opening, newest first.
+         */
+        get: operations["list_agent_runs_job_openings__opening_id__agent_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/job-openings/{opening_id}/email-agent/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Email Agent Run
+         * @description Start a new email agent run for an opening. Returns 202 Accepted.
+         *
+         *     Returns 409 if an email agent run is already in progress.
+         */
+        post: operations["start_email_agent_run_job_openings__opening_id__email_agent_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/job-openings/{opening_id}/email-agent/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream Email Agent Events
+         * @description SSE endpoint for streaming email agent events.
+         *
+         *     Polls the email_agent_runs table and yields new events as SSE messages.
+         *     Includes a heartbeat every 5 seconds.
+         */
+        get: operations["stream_email_agent_events_job_openings__opening_id__email_agent_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/job-openings/{opening_id}/email-agent/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Email Agent Status
+         * @description Get the current email agent status for an opening.
+         */
+        get: operations["get_email_agent_status_job_openings__opening_id__email_agent_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/job-openings/{opening_id}/email-agent/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Email Agent Runs
+         * @description List all email agent runs for an opening, newest first.
+         */
+        get: operations["list_email_agent_runs_job_openings__opening_id__email_agent_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/job-openings/{opening_id}/email-agent/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resume Email Agent
+         * @description Resume a paused email agent run after human-in-the-loop edits.
+         *
+         *     Accepts user_edits in the request body, updates the run state,
+         *     and resumes graph execution.
+         */
+        post: operations["resume_email_agent_job_openings__opening_id__email_agent_resume_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/job-openings/{opening_id}/email-agent/output": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Email Agent Output
+         * @description Get the final output from the latest succeeded email agent run.
+         */
+        get: operations["get_email_agent_output_job_openings__opening_id__email_agent_output_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AgentRunListItem
+         * @description Single item in the agent runs list.
+         */
+        AgentRunListItem: {
+            /** Id */
+            id: number;
+            /** Opening Id */
+            opening_id: number;
+            /** Status */
+            status: string;
+            /** Current Node */
+            current_node?: string | null;
+            /** Error Message */
+            error_message?: string | null;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Completed At */
+            completed_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * AgentRunResponse
+         * @description Response for POST /run — returns 202 with the new run ID.
+         */
+        AgentRunResponse: {
+            /** Run Id */
+            run_id: number;
+            /** Opening Id */
+            opening_id: number;
+            /** Status */
+            status: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * AgentStatusResponse
+         * @description Response for GET /status — current agent state.
+         */
+        AgentStatusResponse: {
+            /** Run Id */
+            run_id?: number | null;
+            /** Opening Id */
+            opening_id: number;
+            /** Agent Status */
+            agent_status: string;
+            /** Current Node */
+            current_node?: string | null;
+            /**
+             * Events
+             * @default []
+             */
+            events: {
+                [key: string]: unknown;
+            }[];
+            /** Error Message */
+            error_message?: string | null;
+            /** Started At */
+            started_at?: string | null;
+            /** Completed At */
+            completed_at?: string | null;
+        };
+        /**
+         * EmailAgentOutputResponse
+         * @description The final output of a completed email agent run.
+         */
+        EmailAgentOutputResponse: {
+            /**
+             * Generated Emails
+             * @default []
+             */
+            generated_emails: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Subject Lines
+             * @default []
+             */
+            subject_lines: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Followup Drafts
+             * @default []
+             */
+            followup_drafts: {
+                [key: string]: unknown;
+            }[];
+            /** Outreach Status */
+            outreach_status?: string | null;
+        };
+        /**
+         * EmailAgentResumeRequest
+         * @description Request body for resuming a paused email agent run (HITL).
+         */
+        EmailAgentResumeRequest: {
+            /** User Edits */
+            user_edits: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
+         * EmailAgentRunListItem
+         * @description Single item in the email agent runs list.
+         */
+        EmailAgentRunListItem: {
+            /** Id */
+            id: number;
+            /** Opening Id */
+            opening_id: number;
+            /** Status */
+            status: string;
+            /** Current Node */
+            current_node?: string | null;
+            /** Error Message */
+            error_message?: string | null;
+            /** Started At */
+            started_at?: string | null;
+            /** Completed At */
+            completed_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * EmailAgentRunResponse
+         * @description Response for POST /run — returns 202 with the new run ID.
+         */
+        EmailAgentRunResponse: {
+            /** Run Id */
+            run_id: number;
+            /** Opening Id */
+            opening_id: number;
+            /** Status */
+            status: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * EmailAgentStartRequest
+         * @description Request body for starting an email agent run.
+         */
+        EmailAgentStartRequest: {
+            /**
+             * Recipient Type
+             * @default recruiter
+             */
+            recipient_type: string;
+            /** Raw Jd */
+            raw_jd?: string | null;
+            /** Raw Resume */
+            raw_resume?: string | null;
+        };
+        /**
+         * EmailAgentStatusResponse
+         * @description Response for GET /status — current agent state.
+         */
+        EmailAgentStatusResponse: {
+            /** Run Id */
+            run_id?: number | null;
+            /** Opening Id */
+            opening_id: number;
+            /** Agent Status */
+            agent_status: string;
+            /** Current Node */
+            current_node?: string | null;
+            /**
+             * Events
+             * @default []
+             */
+            events: {
+                [key: string]: unknown;
+            }[];
+            /** Error Message */
+            error_message?: string | null;
+            /** Started At */
+            started_at?: string | null;
+            /** Completed At */
+            completed_at?: string | null;
+        };
         /** ExtractedDetailsResponse */
         ExtractedDetailsResponse: {
             /** Job Title */
@@ -1537,8 +2019,6 @@ export interface components {
             location?: string | null;
             /** Employment Type */
             employment_type?: string | null;
-            /** Salary Range */
-            salary_range?: string | null;
             /** Description Summary */
             description_summary?: string | null;
             /** Required Skills */
@@ -1555,6 +2035,18 @@ export interface components {
             extractor_model?: string | null;
             /** Source Url */
             source_url?: string | null;
+            /** Role Summary */
+            role_summary?: string | null;
+            /** Technical Keywords */
+            technical_keywords?: string[] | null;
+            /** Sector Keywords */
+            sector_keywords?: string[] | null;
+            /** Business Sectors */
+            business_sectors?: string[] | null;
+            /** Problem Being Solved */
+            problem_being_solved?: string | null;
+            /** Useful Experiences */
+            useful_experiences?: string[] | null;
             /** Extraction Run Id */
             extraction_run_id: number;
             /** Opening Id */
@@ -1879,6 +2371,12 @@ export interface components {
             github_url?: string | null;
             /** Portfolio Url */
             portfolio_url?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Phone */
+            phone?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1905,6 +2403,12 @@ export interface components {
             github_url?: string | null;
             /** Portfolio Url */
             portfolio_url?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Phone */
+            phone?: string | null;
         };
         /**
          * JPProjectCreate
@@ -1927,6 +2431,11 @@ export interface components {
              * @default []
              */
             reference_links: string[];
+            /**
+             * Technologies
+             * @default []
+             */
+            technologies: string[];
         };
         /**
          * JPProjectResponse
@@ -1953,6 +2462,11 @@ export interface components {
              */
             reference_links: string[];
             /**
+             * Technologies
+             * @default []
+             */
+            technologies: string[];
+            /**
              * Created At
              * Format: date-time
              */
@@ -1978,6 +2492,8 @@ export interface components {
             end_month_year?: string | null;
             /** Reference Links */
             reference_links?: string[] | null;
+            /** Technologies */
+            technologies?: string[] | null;
         };
         /**
          * JPResearchCreate
@@ -1993,6 +2509,10 @@ export interface components {
              * @default
              */
             description: string;
+            /** Journal */
+            journal?: string | null;
+            /** Year */
+            year?: string | null;
         };
         /**
          * JPResearchResponse
@@ -2011,6 +2531,10 @@ export interface components {
             publication_link: string;
             /** Description */
             description: string;
+            /** Journal */
+            journal?: string | null;
+            /** Year */
+            year?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -2033,6 +2557,10 @@ export interface components {
             publication_link?: string | null;
             /** Description */
             description?: string | null;
+            /** Journal */
+            journal?: string | null;
+            /** Year */
+            year?: string | null;
         };
         /**
          * JPSkillItemCreate
@@ -2142,6 +2670,32 @@ export interface components {
             status?: ("draft" | "active" | "archived") | null;
         };
         /**
+         * LinkedInImportRequest
+         * @description Request to import a LinkedIn profile.
+         */
+        LinkedInImportRequest: {
+            /**
+             * Linkedin Url
+             * @description LinkedIn profile URL to import
+             */
+            linkedin_url: string;
+        };
+        /**
+         * LinkedInImportResponse
+         * @description Response after LinkedIn import completes.
+         */
+        LinkedInImportResponse: {
+            /** Message */
+            message: string;
+            /**
+             * Sections Imported
+             * @description Count of entries imported per section
+             */
+            sections_imported: {
+                [key: string]: number;
+            };
+        };
+        /**
          * LoginRequest
          * @description Payload required to log a user in.
          */
@@ -2153,6 +2707,53 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /**
+         * ManualExtractedDetailsCreate
+         * @description User-provided snapshot for tailoring when crawl/LLM extraction is unavailable.
+         */
+        ManualExtractedDetailsCreate: {
+            /** Job Title */
+            job_title?: string | null;
+            /** Company Name */
+            company_name?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Employment Type */
+            employment_type?: string | null;
+            /** Description Summary */
+            description_summary?: string | null;
+            /** Required Skills */
+            required_skills?: string[] | null;
+            /** Preferred Skills */
+            preferred_skills?: string[] | null;
+            /** Experience Level */
+            experience_level?: string | null;
+            /** Posted Date */
+            posted_date?: string | null;
+            /** Application Deadline */
+            application_deadline?: string | null;
+            /** Source Url */
+            source_url?: string | null;
+            /** Role Summary */
+            role_summary?: string | null;
+            /** Technical Keywords */
+            technical_keywords?: string[] | null;
+            /** Sector Keywords */
+            sector_keywords?: string[] | null;
+            /** Business Sectors */
+            business_sectors?: string[] | null;
+            /** Problem Being Solved */
+            problem_being_solved?: string | null;
+            /** Useful Experiences */
+            useful_experiences?: string[] | null;
+            /**
+             * Extra Raw
+             * @description Merged into stored raw_payload beside source marker
+             */
+            extra_raw?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** OpeningCreate */
         OpeningCreate: {
@@ -2244,6 +2845,12 @@ export interface components {
             github_url?: string | null;
             /** Portfolio Url */
             portfolio_url?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Phone */
+            phone?: string | null;
         };
         /**
          * PersonalDetailsUpdate
@@ -2260,6 +2867,12 @@ export interface components {
             github_url?: string | null;
             /** Portfolio Url */
             portfolio_url?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Phone */
+            phone?: string | null;
         };
         /**
          * PersonalResponse
@@ -2365,6 +2978,12 @@ export interface components {
         RenderedResumeResponse: {
             /** Job Profile Id */
             job_profile_id: number;
+            /**
+             * Status
+             * @default completed
+             * @constant
+             */
+            status: "completed";
             /** Template Name */
             template_name: string;
             /**
@@ -2376,6 +2995,12 @@ export interface components {
             layout_json: {
                 [key: string]: unknown;
             };
+            /** Error Message */
+            error_message?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
         };
         /**
          * ResetRequest
@@ -2698,6 +3323,16 @@ export interface components {
             /** Description */
             description?: string | null;
             /**
+             * Bullet Points
+             * @default []
+             */
+            bullet_points: string[];
+            /**
+             * Reference Links
+             * @default []
+             */
+            reference_links: string[];
+            /**
              * Display Order
              * @default 0
              */
@@ -2727,6 +3362,16 @@ export interface components {
             /** Description */
             description?: string | null;
             /**
+             * Bullet Points
+             * @default []
+             */
+            bullet_points: string[];
+            /**
+             * Reference Links
+             * @default []
+             */
+            reference_links: string[];
+            /**
              * Display Order
              * @default 0
              */
@@ -2751,6 +3396,10 @@ export interface components {
             grade?: string | null;
             /** Description */
             description?: string | null;
+            /** Bullet Points */
+            bullet_points?: string[] | null;
+            /** Reference Links */
+            reference_links?: string[] | null;
             /** Display Order */
             display_order?: number | null;
         };
@@ -2776,6 +3425,16 @@ export interface components {
             is_current: boolean;
             /** Description */
             description?: string | null;
+            /**
+             * Bullet Points
+             * @default []
+             */
+            bullet_points: string[];
+            /**
+             * Work Sample Links
+             * @default []
+             */
+            work_sample_links: string[];
             /**
              * Display Order
              * @default 0
@@ -2809,6 +3468,16 @@ export interface components {
             /** Description */
             description?: string | null;
             /**
+             * Bullet Points
+             * @default []
+             */
+            bullet_points: string[];
+            /**
+             * Work Sample Links
+             * @default []
+             */
+            work_sample_links: string[];
+            /**
              * Display Order
              * @default 0
              */
@@ -2833,6 +3502,10 @@ export interface components {
             is_current?: boolean | null;
             /** Description */
             description?: string | null;
+            /** Bullet Points */
+            bullet_points?: string[] | null;
+            /** Work Sample Links */
+            work_sample_links?: string[] | null;
             /** Display Order */
             display_order?: number | null;
         };
@@ -2861,6 +3534,11 @@ export interface components {
             /** Technologies */
             technologies?: string[] | null;
             /**
+             * Reference Links
+             * @default []
+             */
+            reference_links: string[];
+            /**
              * Display Order
              * @default 0
              */
@@ -2888,6 +3566,11 @@ export interface components {
             /** Technologies */
             technologies?: string[] | null;
             /**
+             * Reference Links
+             * @default []
+             */
+            reference_links: string[];
+            /**
              * Display Order
              * @default 0
              */
@@ -2910,6 +3593,8 @@ export interface components {
             end_date?: string | null;
             /** Technologies */
             technologies?: string[] | null;
+            /** Reference Links */
+            reference_links?: string[] | null;
             /** Display Order */
             display_order?: number | null;
         };
@@ -3122,8 +3807,11 @@ export interface components {
             start_month_year: string;
             /** End Month Year */
             end_month_year?: string | null;
-            /** Context */
-            context: string;
+            /**
+             * Context
+             * @default
+             */
+            context: string | null;
             /**
              * Work Sample Links
              * @default []
@@ -3208,6 +3896,11 @@ export interface components {
             project_name: string;
             /** Description */
             description: string;
+            /**
+             * Technologies
+             * @default []
+             */
+            technologies: string[];
             /** Start Month Year */
             start_month_year: string;
             /** End Month Year */
@@ -3231,6 +3924,11 @@ export interface components {
             project_name: string;
             /** Description */
             description: string;
+            /**
+             * Technologies
+             * @default []
+             */
+            technologies: string[];
             /** Start Month Year */
             start_month_year: string;
             /** End Month Year */
@@ -3266,6 +3964,8 @@ export interface components {
             end_month_year?: string | null;
             /** Reference Links */
             reference_links?: string[] | null;
+            /** Technologies */
+            technologies?: string[] | null;
         };
         /**
          * ResearchCreate
@@ -3278,6 +3978,10 @@ export interface components {
             publication_link: string;
             /** Description */
             description?: string | null;
+            /** Journal */
+            journal?: string | null;
+            /** Year */
+            year?: string | null;
         };
         /**
          * ResearchResponse
@@ -3294,6 +3998,10 @@ export interface components {
             publication_link: string;
             /** Description */
             description?: string | null;
+            /** Journal */
+            journal?: string | null;
+            /** Year */
+            year?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -3316,6 +4024,10 @@ export interface components {
             publication_link?: string | null;
             /** Description */
             description?: string | null;
+            /** Journal */
+            journal?: string | null;
+            /** Year */
+            year?: string | null;
         };
     };
     responses: never;
@@ -4405,6 +5117,65 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    import_linkedin_profile_profile_import_linkedin_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkedInImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedInImportResponse"];
+                };
+            };
+            /** @description User profile not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid LinkedIn URL or unprocessable profile data */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description LLM mapping failed (failed dependency) */
+            424: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Apify upstream error (bad credentials, quota, empty result) */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Service unavailable (missing API token, transient upstream) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -5794,6 +6565,68 @@ export interface operations {
             };
         };
     };
+    activate_job_profile_job_profiles__job_profile_id__status_activate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_profile_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobProfileResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_job_profile_job_profiles__job_profile_id__status_archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_profile_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobProfileResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     render_resume_job_profiles__job_profile_id__latex_resume_render_post: {
         parameters: {
             query?: never;
@@ -6166,6 +6999,41 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractedDetailsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_manual_extracted_details_job_openings__opening_id__extracted_details_manual_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualExtractedDetailsCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7413,6 +8281,326 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SkillResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_agent_run_job_openings__opening_id__agent_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRunResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stream_agent_events_job_openings__opening_id__agent_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_agent_status_job_openings__opening_id__agent_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_agent_runs_job_openings__opening_id__agent_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRunListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_email_agent_run_job_openings__opening_id__email_agent_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailAgentStartRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailAgentRunResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stream_email_agent_events_job_openings__opening_id__email_agent_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_email_agent_status_job_openings__opening_id__email_agent_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailAgentStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_email_agent_runs_job_openings__opening_id__email_agent_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailAgentRunListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_email_agent_job_openings__opening_id__email_agent_resume_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailAgentResumeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_email_agent_output_job_openings__opening_id__email_agent_output_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailAgentOutputResponse"];
                 };
             };
             /** @description Validation Error */

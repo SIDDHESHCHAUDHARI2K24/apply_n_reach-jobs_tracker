@@ -8,6 +8,7 @@ in the backend directory. Use the `settings` singleton or the
 """
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -30,6 +31,9 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     langchain_api_key: str | None = None
     apify_api_token: str | None = None
+    cors_allow_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    session_cookie_secure: bool = False
+    session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
 
     model_config = SettingsConfigDict(
         env_prefix="",
@@ -37,6 +41,14 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @property
+    def allowed_origins(self) -> list[str]:
+        """Return configured CORS origins parsed from comma-delimited env input."""
+        raw = self.cors_allow_origins.strip()
+        if not raw:
+            return []
+        return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
 
 @lru_cache

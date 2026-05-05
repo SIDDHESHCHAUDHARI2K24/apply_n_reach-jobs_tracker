@@ -15,6 +15,21 @@ from app.features.job_tracker.email_agent.state import EmailAgentEvent, EmailAge
 logger = logging.getLogger(__name__)
 
 
+def _coerce_json_list(val: Any) -> list:
+    """Normalize JSONB / json string / list to a Python list of strings."""
+    if val is None:
+        return []
+    if isinstance(val, list):
+        return val
+    if isinstance(val, str):
+        try:
+            parsed = json.loads(val)
+            return parsed if isinstance(parsed, list) else []
+        except (json.JSONDecodeError, TypeError):
+            return []
+    return []
+
+
 async def run_email_agent_stream(
     conn: asyncpg.Connection,
     user_id: int,
@@ -26,25 +41,65 @@ async def run_email_agent_stream(
 ) -> AsyncIterator[EmailAgentEvent]:
     """Execute the email agent and yield events as they occur.
 
-    Fetches JD text and resume text from the database, runs the compiled
-    graph, persists state to the email_agent_runs table, and yields events
-    for SSE streaming.
+    On first call: streams the graph, pauses before export_node (HITL), saves
+    state as 'paused'. On resume: detects user_edits in the saved DB state,
+    skips the graph, and calls export_node directly.
     """
     configure_langsmith()
 
-    # Mark run as running
+    # Detect resume: saved state in DB already contains user_edits
+    saved_row = await conn.fetchrow(
+        "SELECT state FROM job_opening_email_agent_runs WHERE id=$1", run_id
+    )
+    saved_state: dict = {}
+    if saved_row and saved_row["state"]:
+        raw = saved_row["state"]
+        if isinstance(raw, str):
+            try:
+                saved_state = json.loads(raw)
+            except (json.JSONDecodeError, ValueError):
+                saved_state = {}
+        elif isinstance(raw, dict):
+            saved_state = dict(raw)
+
+    is_resume = bool(saved_state.get("user_edits"))
+
+    current_node_label = "export_node" if is_resume else "jd_parser"
     await conn.execute(
-        "UPDATE job_opening_email_agent_runs SET status='running', current_node='jd_parser' WHERE id=$1",
-        run_id,
+        "UPDATE job_opening_email_agent_runs SET status='running', current_node=$1 WHERE id=$2",
+        current_node_label, run_id,
     )
 
     yield EmailAgentEvent(node="agent", status="started", message="Email agent started")
 
     try:
-        # Fetch JD text from the database
-        raw_jd = raw_jd_override or await _build_raw_jd(conn, opening_id)
+        if is_resume:
+            # Resume path: apply user_edits by calling export_node directly
+            from app.features.job_tracker.email_agent.nodes.export_node import export_node as _export_node
 
-        # Fetch resume text from the database
+            export_result = await _export_node(saved_state)
+            final_state = {**saved_state, **export_result}
+
+            await conn.execute(
+                """
+                UPDATE job_opening_email_agent_runs
+                SET status='succeeded', state=$1::jsonb, events=$2::jsonb,
+                    completed_at=NOW(), error_message=NULL, current_node=NULL
+                WHERE id=$3
+                """,
+                json.dumps(_sanitize_state(final_state)),
+                json.dumps(final_state.get("events", [])),
+                run_id,
+            )
+            yield EmailAgentEvent(
+                node="agent",
+                status="succeeded",
+                message="Email agent resumed and completed successfully",
+            )
+            return
+
+        # First run: stream through graph nodes
+        raw_jd = raw_jd_override or await _build_raw_jd(conn, opening_id)
         raw_resume = raw_resume_override or await _build_raw_resume(conn, opening_id)
 
         graph = build_graph()
@@ -60,11 +115,16 @@ async def run_email_agent_stream(
             "debug_log": [],
         }
 
-        # Stream through graph nodes
         final_state = initial_state
         emitted_event_count = 0
+        interrupted = False
+
         async for event in graph.astream(initial_state, config={"configurable": {"run_id": run_id}}):
             for node_name, state_update in event.items():
+                if node_name == "__interrupt__":
+                    # Graph hit interrupt_before=["export_node"] — pause for HITL review
+                    interrupted = True
+                    continue
                 if isinstance(state_update, dict):
                     final_state = {**final_state, **state_update}
 
@@ -85,30 +145,46 @@ async def run_email_agent_stream(
                             node_name, state_update["error"],
                         )
 
-        # Determine final status
-        error = final_state.get("error")
-        final_status = "failed" if error else "succeeded"
+        if interrupted:
+            # Save intermediate state; wait for human review via /resume endpoint
+            await conn.execute(
+                """
+                UPDATE job_opening_email_agent_runs
+                SET status='paused', state=$1::jsonb, events=$2::jsonb,
+                    current_node='export_node'
+                WHERE id=$3
+                """,
+                json.dumps(_sanitize_state(final_state)),
+                json.dumps(final_state.get("events", [])),
+                run_id,
+            )
+            yield EmailAgentEvent(
+                node="agent",
+                status="paused",
+                message="Emails generated — awaiting review before export",
+            )
+        else:
+            error = final_state.get("error")
+            final_status = "failed" if error else "succeeded"
 
-        # Persist final state
-        await conn.execute(
-            """
-            UPDATE job_opening_email_agent_runs
-            SET status=$1, state=$2::jsonb, events=$3::jsonb,
-                completed_at=NOW(), error_message=$4, current_node=NULL
-            WHERE id=$5
-            """,
-            final_status,
-            json.dumps(_sanitize_state(final_state)),
-            json.dumps(final_state.get("events", [])),
-            error,
-            run_id,
-        )
-
-        yield EmailAgentEvent(
-            node="agent",
-            status=final_status,
-            message=error or "Email agent completed successfully",
-        )
+            await conn.execute(
+                """
+                UPDATE job_opening_email_agent_runs
+                SET status=$1, state=$2::jsonb, events=$3::jsonb,
+                    completed_at=NOW(), error_message=$4, current_node=NULL
+                WHERE id=$5
+                """,
+                final_status,
+                json.dumps(_sanitize_state(final_state)),
+                json.dumps(final_state.get("events", [])),
+                error,
+                run_id,
+            )
+            yield EmailAgentEvent(
+                node="agent",
+                status=final_status,
+                message=error or "Email agent completed successfully",
+            )
 
     except Exception as e:
         logger.exception("Email agent runner crashed for run %d", run_id)
@@ -147,7 +223,7 @@ async def _build_raw_jd(conn: asyncpg.Connection, opening_id: int) -> str:
     details = await conn.fetchrow(
         """
         SELECT job_title, description_summary, role_summary, location,
-               employment_type, salary_range, experience_level,
+               employment_type, experience_level,
                required_skills, preferred_skills, technical_keywords,
                sector_keywords, business_sectors, problem_being_solved,
                useful_experiences
@@ -164,8 +240,6 @@ async def _build_raw_jd(conn: asyncpg.Connection, opening_id: int) -> str:
             parts.append(f"Location: {details['location']}")
         if details["employment_type"]:
             parts.append(f"Employment Type: {details['employment_type']}")
-        if details["salary_range"]:
-            parts.append(f"Salary Range: {details['salary_range']}")
         if details["experience_level"]:
             parts.append(f"Experience Level: {details['experience_level']}")
         if details["description_summary"]:
@@ -241,7 +315,8 @@ async def _build_raw_resume(conn: asyncpg.Connection, opening_id: int) -> str:
     # Experience
     exp_rows = await conn.fetch(
         """
-        SELECT company, title, location, start_date, end_date, is_current, description
+        SELECT company, title, location, start_date, end_date, is_current, description,
+               bullet_points, work_sample_links
         FROM job_opening_experience
         WHERE resume_id=$1
         ORDER BY display_order
@@ -257,12 +332,18 @@ async def _build_raw_resume(conn: asyncpg.Connection, opening_id: int) -> str:
                 parts.append(f"  Location: {exp['location']}")
             if exp["description"]:
                 parts.append(f"  {exp['description']}")
+            for b in _coerce_json_list(exp["bullet_points"]):
+                if b and str(b).strip():
+                    parts.append(f"  • {b}")
+            for u in _coerce_json_list(exp["work_sample_links"]):
+                if u and str(u).strip():
+                    parts.append(f"  Work sample: {u}")
 
     # Education
     edu_rows = await conn.fetch(
         """
         SELECT institution, degree, field_of_study, start_date, end_date,
-               grade, description
+               grade, description, bullet_points, reference_links
         FROM job_opening_education
         WHERE resume_id=$1
         ORDER BY display_order
@@ -278,11 +359,17 @@ async def _build_raw_resume(conn: asyncpg.Connection, opening_id: int) -> str:
                 parts.append(f"  Grade: {edu['grade']}")
             if edu.get("description"):
                 parts.append(f"  {edu['description']}")
+            for b in _coerce_json_list(edu["bullet_points"]):
+                if b and str(b).strip():
+                    parts.append(f"  • {b}")
+            for u in _coerce_json_list(edu["reference_links"]):
+                if u and str(u).strip():
+                    parts.append(f"  Link: {u}")
 
     # Projects
     proj_rows = await conn.fetch(
         """
-        SELECT name, description, url, technologies
+        SELECT name, description, url, technologies, reference_links
         FROM job_opening_projects
         WHERE resume_id=$1
         ORDER BY display_order
@@ -297,6 +384,9 @@ async def _build_raw_resume(conn: asyncpg.Connection, opening_id: int) -> str:
                 parts.append(f"  {proj['description']}")
             if proj.get("url"):
                 parts.append(f"  URL: {proj['url']}")
+            for u in _coerce_json_list(proj["reference_links"]):
+                if u and str(u).strip() and u != proj.get("url"):
+                    parts.append(f"  Link: {u}")
             if proj.get("technologies"):
                 techs = proj["technologies"]
                 if isinstance(techs, list):

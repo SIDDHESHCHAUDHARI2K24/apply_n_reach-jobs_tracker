@@ -24,7 +24,7 @@ async def list_education(
     current_user: asyncpg.Record = Depends(get_current_user),
 ) -> list[EducationResponse]:
     rows = await service.list_entries(conn, current_user["id"], opening_id)
-    return [EducationResponse(**dict(r)) for r in rows]
+    return [EducationResponse(**service._parse_row(r)) for r in rows]
 
 
 @router.post(
@@ -39,7 +39,7 @@ async def create_education(
     current_user: asyncpg.Record = Depends(get_current_user),
 ) -> EducationResponse:
     row = await service.create_entry(conn, current_user["id"], opening_id, data)
-    return EducationResponse(**dict(row))
+    return EducationResponse(**service._parse_row(row))
 
 
 @router.get(
@@ -53,7 +53,7 @@ async def get_education(
     current_user: asyncpg.Record = Depends(get_current_user),
 ) -> EducationResponse:
     row = await service.get_entry(conn, current_user["id"], opening_id, entry_id)
-    return EducationResponse(**dict(row))
+    return EducationResponse(**service._parse_row(row))
 
 
 @router.patch(
@@ -68,7 +68,7 @@ async def update_education(
     current_user: asyncpg.Record = Depends(get_current_user),
 ) -> EducationResponse:
     row = await service.update_entry(conn, current_user["id"], opening_id, entry_id, data)
-    return EducationResponse(**dict(row))
+    return EducationResponse(**service._parse_row(row))
 
 
 @router.delete(

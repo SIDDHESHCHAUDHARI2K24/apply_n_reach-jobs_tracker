@@ -30,6 +30,9 @@
       ],
       "@app/*": [
         "src/app/*"
+      ],
+      "@generated/*": [
+        "src/generated/*"
       ]
     },
     "plugins": [

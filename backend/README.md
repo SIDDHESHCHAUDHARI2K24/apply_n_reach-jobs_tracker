@@ -21,6 +21,7 @@ uv sync
 
 ```bash
 DATABASE_URL=postgresql+asyncpg://user:password@host:port/dbname
+CORS_ALLOW_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```
 
 ## Running the app
@@ -31,11 +32,22 @@ From the `backend/` directory:
 uv run uvicorn app.app:create_app --factory --reload --loop asyncio
 ```
 
+Use `uv run` so the interpreter matches this project’s synced dependencies (LangChain ingestion, agents, tracing). Running uvicorn against another clone’s `.venv` (missing `langchain-core`) will raise import errors at startup or during extraction. Resume agent runs also depend on `langgraph`, so run `uv sync` in this directory before starting the server.
+
+After dependency changes (for example edits to `pyproject.toml`), run `uv sync` from this directory first.
+
 ## Running tests
 
 ```bash
 uv run python -m pytest
 ```
+
+## Job tracker extraction behavior
+
+- Creating an opening with `source_url` via `POST /job-openings` now auto-queues background extraction.
+- Extraction is best-effort and does not block the `201` create response.
+- Manual re-runs remain available with `POST /job-openings/{opening_id}/extraction/refresh`.
+- LangSmith tracing: set `LANGCHAIN_API_KEY` in `.env` to send traces for extraction and other LangChain flows. Runs appear under project `ETB_Project`; filter by run name `job_opening_extraction` or tags `opening_ingestion`, `extraction`.
 
 ## Running migrations
 

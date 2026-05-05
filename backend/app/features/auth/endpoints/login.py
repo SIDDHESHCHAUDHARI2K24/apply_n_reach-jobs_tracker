@@ -2,10 +2,11 @@
 
 from fastapi import HTTPException, Response, status
 
+from app.features.core.config import settings
 from app.features.core.dependencies import DbDep
 
 from .. import models, schemas
-from ..utils import generate_session_token, hash_password, verify_password
+from ..utils import generate_session_token, verify_password
 
 
 async def login(
@@ -33,7 +34,8 @@ async def login(
         key="session_id",
         value=session_token,
         httponly=True,
-        samesite="lax",
+        secure=settings.session_cookie_secure,
+        samesite=settings.session_cookie_samesite,
     )
 
     return schemas.UserOut(

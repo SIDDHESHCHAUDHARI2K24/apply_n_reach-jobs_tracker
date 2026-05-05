@@ -8,6 +8,7 @@ from fastapi import HTTPException
 
 from app.features.job_tracker.opening_ingestion.clients.apify_client import CrawlError, crawl_url
 from app.features.job_tracker.agents.config import DEFAULT_MODEL
+from app.features.job_tracker.opening_ingestion.schemas import ManualExtractedDetailsCreate
 from app.features.job_tracker.opening_ingestion.clients.extraction_chain import (
     ExtractionError,
     extract_job_details,
@@ -16,6 +17,109 @@ from app.features.job_tracker.opening_ingestion.clients.extraction_chain import 
 RETRY_DELAYS = [30, 120]  # seconds between retry attempts
 MAX_ATTEMPTS = 3  # 1 initial + 2 retries
 STALE_RUN_THRESHOLD_MINUTES = 5
+
+MANUAL_EXTRACTOR_MARKER = "manual"
+
+
+async def save_manual_extracted_details(
+    conn: asyncpg.Connection,
+    user_id: int,
+    opening_id: int,
+    payload: ManualExtractedDetailsCreate,
+) -> asyncpg.Record:
+    """Persist a synthetic extraction snapshot from user-entered job details.
+
+    Inserts a succeeded extraction run and a details version row so the resume
+    agent's extract node can load via get_latest_extracted_details.
+    """
+    opening = await conn.fetchrow(
+        "SELECT id, source_url FROM job_openings WHERE id=$1 AND user_id=$2",
+        opening_id,
+        user_id,
+    )
+    if not opening:
+        raise HTTPException(status_code=404, detail="Job opening not found")
+
+    raw_obj: dict = {"source": "manual"}
+    if payload.extra_raw:
+        for k, v in payload.extra_raw.items():
+            if k != "source":
+                raw_obj[k] = v
+
+    job_title = payload.job_title
+    company_name = payload.company_name
+    location = payload.location
+    employment_type = payload.employment_type
+    description_summary = payload.description_summary
+    required_skills = payload.required_skills or []
+    preferred_skills = payload.preferred_skills or []
+    experience_level = payload.experience_level
+    posted_date = payload.posted_date
+    application_deadline = payload.application_deadline
+    role_summary = payload.role_summary
+    technical_kw = payload.technical_keywords or []
+    sector_kw = payload.sector_keywords or []
+    business_sec = payload.business_sectors or []
+    problem = payload.problem_being_solved
+    useful_ex = payload.useful_experiences or []
+    source_url = payload.source_url if payload.source_url else opening["source_url"]
+
+    async with conn.transaction():
+        run_row = await conn.fetchrow(
+            """
+            INSERT INTO job_opening_extraction_runs
+                (opening_id, status, attempt_number, started_at, completed_at)
+            VALUES ($1, 'succeeded', 1, NOW(), NOW())
+            RETURNING id
+            """,
+            opening_id,
+        )
+        run_id = run_row["id"]
+
+        await conn.execute(
+            """
+            INSERT INTO job_opening_extracted_details_versions (
+                run_id, opening_id, schema_version,
+                job_title, company_name, location, employment_type,
+                description_summary, required_skills, preferred_skills,
+                experience_level, posted_date, application_deadline,
+                raw_payload, extractor_model, source_url,
+                role_summary, technical_keywords, sector_keywords,
+                business_sectors, problem_being_solved, useful_experiences
+            ) VALUES (
+                $1, $2, 1,
+                $3, $4, $5, $6,
+                $7, $8::jsonb, $9::jsonb,
+                $10, $11, $12,
+                $13::jsonb, $14, $15,
+                $16, $17::jsonb, $18::jsonb,
+                $19::jsonb, $20, $21::jsonb
+            )
+            """,
+            run_id,
+            opening_id,
+            job_title,
+            company_name,
+            location,
+            employment_type,
+            description_summary,
+            json.dumps(required_skills),
+            json.dumps(preferred_skills),
+            experience_level,
+            posted_date,
+            application_deadline,
+            json.dumps(raw_obj),
+            MANUAL_EXTRACTOR_MARKER,
+            source_url,
+            role_summary,
+            json.dumps(technical_kw),
+            json.dumps(sector_kw),
+            json.dumps(business_sec),
+            problem,
+            json.dumps(useful_ex),
+        )
+
+    return await get_latest_extracted_details(conn, user_id, opening_id)
 
 
 async def enqueue_extraction(conn, opening_id: int) -> asyncpg.Record:

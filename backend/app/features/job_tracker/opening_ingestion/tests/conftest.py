@@ -72,7 +72,26 @@ def sample_opening(auth_client):
         },
     )
     assert resp.status_code == 201
-    return resp.json()
+    opening = resp.json()
+
+    # Opening creation now auto-enqueues extraction; clear auto-created run artifacts
+    # so ingestion endpoint tests can control run state explicitly.
+    async def reset_auto_extraction_state():
+        conn = await asyncpg.connect(settings.database_url)
+        try:
+            await conn.execute(
+                "DELETE FROM job_opening_extracted_details_versions WHERE opening_id=$1",
+                opening["id"],
+            )
+            await conn.execute(
+                "DELETE FROM job_opening_extraction_runs WHERE opening_id=$1",
+                opening["id"],
+            )
+        finally:
+            await conn.close()
+
+    asyncio.run(reset_auto_extraction_state())
+    return opening
 
 
 SAMPLE_RAW_TEXT = """
@@ -100,8 +119,7 @@ SAMPLE_EXTRACTED = ExtractedJobDetails(
     company_name="Acme Corp",
     location="San Francisco, CA (Remote OK)",
     employment_type="Full-time",
-    salary_range="$120,000 - $160,000",
-    description_summary="Software Engineer role at Acme Corp",
+    description_summary="Software Engineer role at Acme Corp. Posted salary band: $120,000 - $160,000.",
     required_skills=["Python", "FastAPI", "PostgreSQL"],
     preferred_skills=["Kubernetes", "Docker"],
     experience_level="Mid-level",

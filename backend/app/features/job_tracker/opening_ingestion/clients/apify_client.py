@@ -51,4 +51,7 @@ async def crawl_url(url: str) -> str:
     if not items:
         raise CrawlError(f"No content returned for URL: {url}")
 
-    return items[0].get("text", items[0].get("markdown", ""))
+    content = items[0].get("text") or items[0].get("markdown") or ""
+    if not content.strip():
+        raise CrawlError(f"No usable text content extracted from URL: {url}")
+    return content

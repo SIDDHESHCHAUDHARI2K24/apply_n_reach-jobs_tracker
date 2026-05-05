@@ -13,6 +13,7 @@ from fastapi.responses import StreamingResponse
 from app.features.auth.utils import get_current_user
 from app.features.core.config import get_settings
 from app.features.core.dependencies import DbDep
+from app.features.job_tracker.agents.runner import run_agent_stream
 from app.features.job_tracker.agents.schemas import (
     AgentRunListItem,
     AgentRunResponse,
@@ -91,19 +92,22 @@ async def _run_agent_background(
     """Background task that runs the agent with its own DB connection."""
     conn = await asyncpg.connect(db_url)
     try:
-        from app.features.job_tracker.agents.runner import run_agent_stream
-
         async for event in run_agent_stream(conn, user_id, opening_id, run_id):
             logger.info("Agent event: %s", event)
-    except Exception:
+    except Exception as exc:
         logger.exception("Agent background task failed for run %d", run_id)
+        message = (str(exc).strip() or repr(exc))[:8000]
+        if not message:
+            message = type(exc).__name__
+        error_message = f"{type(exc).__name__}: {message}"
         await conn.execute(
             """
             UPDATE job_opening_agent_runs
-            SET status='failed', error_message='Background task crashed', completed_at=NOW()
+            SET status='failed', error_message=$2, completed_at=NOW()
             WHERE id=$1
             """,
             run_id,
+            error_message,
         )
         await conn.execute(
             "UPDATE job_openings SET agent_status='failed' WHERE id=$1",

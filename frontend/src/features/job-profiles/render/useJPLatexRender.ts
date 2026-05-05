@@ -68,21 +68,9 @@ export function useJPLatexRender(jobProfileId: string) {
     }
   }, [jobProfileId])
 
-  const openPdfInTab = useCallback(async () => {
-    try {
-      const blob = await jobProfileApi.downloadPdf(jobProfileId)
-      const url = URL.createObjectURL(blob)
-      window.open(url, '_blank')
-      // Revoke after a short delay to allow the tab to load
-      setTimeout(() => URL.revokeObjectURL(url), 30_000)
-    } catch (err) {
-      setState(s => ({ ...s, error: err instanceof HttpError ? err.message : 'Failed to open PDF' }))
-    }
-  }, [jobProfileId])
-
   useEffect(() => {
     void loadMetadata()
   }, [loadMetadata])
 
-  return { ...state, triggerRender, stopPolling, downloadPdf, openPdfInTab }
+  return { ...state, triggerRender, stopPolling, downloadPdf }
 }

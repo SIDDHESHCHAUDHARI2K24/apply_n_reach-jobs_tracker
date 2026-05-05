@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { openingResumeApi } from './openingResumeApi'
+import { jobProfileApi } from '@features/job-profiles/jobProfileApi'
 import { HttpError } from '@core/http/client'
 import type { OpeningResume } from './types'
+import type { JobProfile } from '@features/job-profiles/types'
 
 interface State {
   resume: OpeningResume | null
@@ -10,6 +12,8 @@ interface State {
   error: string | null
   notFound: boolean
   conflict: boolean
+  jobProfiles: JobProfile[]
+  isLoadingProfiles: boolean
 }
 
 export function useOpeningResume(openingId: string) {
@@ -20,11 +24,29 @@ export function useOpeningResume(openingId: string) {
     error: null,
     notFound: false,
     conflict: false,
+    jobProfiles: [],
+    isLoadingProfiles: false,
   })
   const cancelledRef = useRef(false)
 
-  const loadResume = useCallback(async () => {
-    setState(s => ({ ...s, isLoading: true, error: null, notFound: false }))
+  const loadJobProfiles = useCallback(async () => {
+    setState(s => ({ ...s, isLoadingProfiles: true }))
+    try {
+      const page = await jobProfileApi.list({ limit: 50 })
+      if (!cancelledRef.current) setState(s => ({ ...s, jobProfiles: page.items, isLoadingProfiles: false }))
+    } catch {
+      if (!cancelledRef.current) setState(s => ({ ...s, jobProfiles: [], isLoadingProfiles: false }))
+    }
+  }, [])
+
+  const loadResume = useCallback(async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent === true
+    setState(s => ({
+      ...s,
+      ...(silent ? {} : { isLoading: true }),
+      error: null,
+      notFound: false,
+    }))
     try {
       const resume = await openingResumeApi.get(openingId)
       if (!cancelledRef.current) setState(s => ({ ...s, resume, isLoading: false }))
@@ -32,12 +54,13 @@ export function useOpeningResume(openingId: string) {
       if (!cancelledRef.current) {
         if (err instanceof HttpError && err.status === 404) {
           setState(s => ({ ...s, isLoading: false, notFound: true }))
+          loadJobProfiles()
         } else {
           setState(s => ({ ...s, isLoading: false, error: err instanceof Error ? err.message : 'Failed to load resume' }))
         }
       }
     }
-  }, [openingId])
+  }, [openingId, loadJobProfiles])
 
   useEffect(() => {
     cancelledRef.current = false

@@ -24,7 +24,7 @@ async def list_projects(
     current_user: asyncpg.Record = Depends(get_current_user),
 ) -> list[ProjectResponse]:
     rows = await service.list_entries(conn, current_user["id"], opening_id)
-    return [ProjectResponse(**service._parse_technologies(r)) for r in rows]
+    return [ProjectResponse(**service._parse_project_row(r)) for r in rows]
 
 
 @router.post(
@@ -39,7 +39,7 @@ async def create_project(
     current_user: asyncpg.Record = Depends(get_current_user),
 ) -> ProjectResponse:
     row = await service.create_entry(conn, current_user["id"], opening_id, data)
-    return ProjectResponse(**service._parse_technologies(row))
+    return ProjectResponse(**service._parse_project_row(row))
 
 
 @router.get(
@@ -53,7 +53,7 @@ async def get_project(
     current_user: asyncpg.Record = Depends(get_current_user),
 ) -> ProjectResponse:
     row = await service.get_entry(conn, current_user["id"], opening_id, entry_id)
-    return ProjectResponse(**service._parse_technologies(row))
+    return ProjectResponse(**service._parse_project_row(row))
 
 
 @router.patch(
@@ -68,7 +68,7 @@ async def update_project(
     current_user: asyncpg.Record = Depends(get_current_user),
 ) -> ProjectResponse:
     row = await service.update_entry(conn, current_user["id"], opening_id, entry_id, data)
-    return ProjectResponse(**service._parse_technologies(row))
+    return ProjectResponse(**service._parse_project_row(row))
 
 
 @router.delete(

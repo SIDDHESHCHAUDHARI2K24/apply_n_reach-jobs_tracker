@@ -19,6 +19,8 @@ class EducationResponse(BaseSchema):
     end_date: Optional[str] = None
     grade: Optional[str] = None
     description: Optional[str] = None
+    bullet_points: list[str] = []
+    reference_links: list[str] = []
     display_order: int = 0
 
 
@@ -32,6 +34,8 @@ class EducationCreate(BaseSchema):
     end_date: Optional[str] = None
     grade: Optional[str] = None
     description: Optional[str] = None
+    bullet_points: list[str] = []
+    reference_links: list[str] = []
     display_order: int = 0
 
     @field_validator("institution", mode="before")
@@ -60,6 +64,22 @@ class EducationCreate(BaseSchema):
             return None
         return sanitize_text(v, max_length=5000)
 
+    @field_validator("bullet_points", mode="before")
+    @classmethod
+    def sanitize_bullets(cls, v):
+        if not isinstance(v, list):
+            raise ValueError("bullet_points must be a list")
+        return [sanitize_text(item, max_length=500) for item in v]
+
+    @field_validator("reference_links", mode="before")
+    @classmethod
+    def sanitize_links(cls, v):
+        if not isinstance(v, list):
+            raise ValueError("reference_links must be a list")
+        if len(v) > 1:
+            raise ValueError("Only one reference link allowed per entry")
+        return [sanitize_text(str(item), max_length=2048) for item in v]
+
 
 class EducationUpdate(BaseSchema):
     """Request schema for partial update of a job opening education entry."""
@@ -71,6 +91,8 @@ class EducationUpdate(BaseSchema):
     end_date: Optional[str] = None
     grade: Optional[str] = None
     description: Optional[str] = None
+    bullet_points: Optional[list[str]] = None
+    reference_links: Optional[list[str]] = None
     display_order: Optional[int] = None
 
     @field_validator("institution", mode="before")
@@ -100,3 +122,23 @@ class EducationUpdate(BaseSchema):
         if v is None:
             return None
         return sanitize_text(v, max_length=5000)
+
+    @field_validator("bullet_points", mode="before")
+    @classmethod
+    def sanitize_bullets_upd(cls, v):
+        if v is None:
+            return None
+        if not isinstance(v, list):
+            raise ValueError("bullet_points must be a list")
+        return [sanitize_text(item, max_length=500) for item in v]
+
+    @field_validator("reference_links", mode="before")
+    @classmethod
+    def sanitize_links_upd(cls, v):
+        if v is None:
+            return None
+        if not isinstance(v, list):
+            raise ValueError("reference_links must be a list")
+        if len(v) > 1:
+            raise ValueError("Only one reference link allowed per entry")
+        return [sanitize_text(str(item), max_length=2048) for item in v]

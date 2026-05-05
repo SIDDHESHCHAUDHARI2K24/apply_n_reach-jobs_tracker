@@ -10,17 +10,12 @@ from app.features.job_tracker.opening_resume.projects.schemas import (
 )
 
 
-def _parse_technologies(row: asyncpg.Record) -> dict:
-    """Convert row to dict with technologies deserialized from JSONB string if needed.
-
-    asyncpg returns JSONB as a native Python list/dict on plain SELECT queries, so
-    the isinstance check is a no-op on list_entries / get_entry paths.  It is only
-    needed for INSERT / UPDATE RETURNING paths, where asyncpg delivers the JSONB
-    column back as a raw JSON string rather than a decoded Python object.
-    """
+def _parse_project_row(row: asyncpg.Record) -> dict:
+    """Convert row to dict with JSONB columns deserialized if needed."""
     d = dict(row)
-    if isinstance(d.get("technologies"), str):
-        d["technologies"] = json.loads(d["technologies"])
+    for key in ("technologies", "reference_links"):
+        if isinstance(d.get(key), str):
+            d[key] = json.loads(d[key])
     return d
 
 
@@ -95,14 +90,13 @@ async def create_entry(
     data: ProjectCreate,
 ) -> asyncpg.Record:
     resume_id = await _get_resume_id(conn, user_id, opening_id)
-    # Pass technologies as plain $7 — asyncpg handles NULL natively without a ::jsonb cast.
-    # When non-null, json.dumps produces a string that Postgres coerces to jsonb via the column type.
     technologies = json.dumps(data.technologies) if data.technologies is not None else None
+    reference_links = json.dumps(data.reference_links)
     return await conn.fetchrow(
         """
         INSERT INTO job_opening_projects
-            (resume_id, name, description, url, start_date, end_date, technologies, display_order)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            (resume_id, name, description, url, start_date, end_date, technologies, reference_links, display_order)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *
         """,
         resume_id,
@@ -112,6 +106,7 @@ async def create_entry(
         data.start_date,
         data.end_date,
         technologies,
+        reference_links,
         data.display_order,
     )
 
@@ -132,7 +127,7 @@ async def update_entry(
         "job_opening_projects",
         {"id": entry_id, "resume_id": resume_id},
         updates,
-        jsonb_fields={"technologies"},
+        jsonb_fields={"technologies", "reference_links"},
     )
     row = await conn.fetchrow(query, *params)
     if not row:

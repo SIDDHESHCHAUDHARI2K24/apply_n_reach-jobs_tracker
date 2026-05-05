@@ -1,5 +1,11 @@
 """Tests for job opening CRUD operations."""
+import asyncio
 import uuid
+from unittest.mock import AsyncMock, patch
+
+import asyncpg
+
+from app.features.core.config import settings
 
 
 def test_create_opening_201(auth_client):
@@ -33,6 +39,75 @@ def test_create_opening_with_initial_status(auth_client):
     )
     assert resp.status_code == 201
     assert resp.json()["current_status"] == "Applied"
+
+
+def test_create_opening_with_source_url_auto_enqueues_extraction(auth_client):
+    client, _ = auth_client
+    company = f"Auto Extract Co {uuid.uuid4().hex[:8]}"
+    with patch(
+        "app.features.job_tracker.openings_core.router.run_extraction",
+        new_callable=AsyncMock,
+    ) as mock_run_extraction:
+        resp = client.post(
+            "/job-openings",
+            json={
+                "company_name": company,
+                "role_name": "Backend Engineer",
+                "source_url": "https://example.com/jobs/backend-engineer",
+            },
+        )
+    assert resp.status_code == 201
+    opening_id = resp.json()["id"]
+    assert mock_run_extraction.await_count == 1
+
+    async def _assert_run_exists():
+        conn = await asyncpg.connect(settings.database_url)
+        try:
+            for _ in range(30):
+                row = await conn.fetchrow(
+                    """
+                    SELECT id
+                    FROM job_opening_extraction_runs
+                    WHERE opening_id=$1
+                    LIMIT 1
+                    """,
+                    opening_id,
+                )
+                if row:
+                    return
+                await asyncio.sleep(0.1)
+            assert False, "Expected auto extraction run to be created"
+        finally:
+            await conn.close()
+
+    asyncio.run(_assert_run_exists())
+
+
+def test_create_opening_without_source_url_does_not_enqueue_extraction(auth_client):
+    client, _ = auth_client
+    company = f"No Extract Co {uuid.uuid4().hex[:8]}"
+    resp = client.post(
+        "/job-openings",
+        json={
+            "company_name": company,
+            "role_name": "Backend Engineer",
+        },
+    )
+    assert resp.status_code == 201
+    opening_id = resp.json()["id"]
+
+    async def _assert_no_run_exists():
+        conn = await asyncpg.connect(settings.database_url)
+        try:
+            count = await conn.fetchval(
+                "SELECT COUNT(*) FROM job_opening_extraction_runs WHERE opening_id=$1",
+                opening_id,
+            )
+            assert count == 0
+        finally:
+            await conn.close()
+
+    asyncio.run(_assert_no_run_exists())
 
 
 def test_get_opening_200(auth_client, sample_opening):

@@ -1398,6 +1398,53 @@
         }
       }
     },
+    "/profile/import/linkedin": {
+      "post": {
+        "tags": [
+          "linkedin-import"
+        ],
+        "summary": "Import Linkedin Profile",
+        "description": "Import a LinkedIn profile, replacing all user_profile sections.",
+        "operationId": "import_linkedin_profile_profile_import_linkedin_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkedInImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedInImportResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User profile not found"
+          },
+          "422": {
+            "description": "Invalid LinkedIn URL or unprocessable profile data"
+          },
+          "424": {
+            "description": "LLM mapping failed (failed dependency)"
+          },
+          "502": {
+            "description": "Apify upstream error (bad credentials, quota, empty result)"
+          },
+          "503": {
+            "description": "Service unavailable (missing API token, transient upstream)"
+          }
+        }
+      }
+    },
     "/job-profiles": {
       "post": {
         "tags": [
@@ -3494,6 +3541,92 @@
         }
       }
     },
+    "/job-profiles/{job_profile_id}/status/activate": {
+      "post": {
+        "tags": [
+          "job-profile"
+        ],
+        "summary": "Activate Job Profile",
+        "description": "Activate a draft or archived job profile.",
+        "operationId": "activate_job_profile_job_profiles__job_profile_id__status_activate_post",
+        "parameters": [
+          {
+            "name": "job_profile_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Profile Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job-profiles/{job_profile_id}/status/archive": {
+      "post": {
+        "tags": [
+          "job-profile"
+        ],
+        "summary": "Archive Job Profile",
+        "description": "Archive an active or draft job profile.",
+        "operationId": "archive_job_profile_job_profiles__job_profile_id__status_archive_post",
+        "parameters": [
+          {
+            "name": "job_profile_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Profile Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/job-profiles/{job_profile_id}/latex-resume/render": {
       "post": {
         "tags": [
@@ -4083,6 +4216,59 @@
         ],
         "responses": {
           "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractedDetailsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job-openings/{opening_id}/extracted-details/manual": {
+      "post": {
+        "tags": [
+          "job-openings-extraction"
+        ],
+        "summary": "Create Manual Extracted Details",
+        "description": "Save user-entered job details as a succeeded extraction snapshot for the resume agent.",
+        "operationId": "create_manual_extracted_details_job_openings__opening_id__extracted_details_manual_post",
+        "parameters": [
+          {
+            "name": "opening_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Opening Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualExtractedDetailsCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
             "description": "Successful Response",
             "content": {
               "application/json": {
@@ -5966,10 +6152,937 @@
           }
         }
       }
+    },
+    "/job-openings/{opening_id}/agent/run": {
+      "post": {
+        "tags": [
+          "resume-agent"
+        ],
+        "summary": "Start Agent Run",
+        "description": "Start a new agent run for an opening. Returns 202 Accepted.\n\nReturns 409 if an agent run is already in progress.",
+        "operationId": "start_agent_run_job_openings__opening_id__agent_run_post",
+        "parameters": [
+          {
+            "name": "opening_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Opening Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job-openings/{opening_id}/agent/stream": {
+      "get": {
+        "tags": [
+          "resume-agent"
+        ],
+        "summary": "Stream Agent Events",
+        "description": "SSE endpoint for streaming agent events.\n\nPolls the agent_runs table and yields new events as SSE messages.\nIncludes a heartbeat every 5 seconds.",
+        "operationId": "stream_agent_events_job_openings__opening_id__agent_stream_get",
+        "parameters": [
+          {
+            "name": "opening_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Opening Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job-openings/{opening_id}/agent/status": {
+      "get": {
+        "tags": [
+          "resume-agent"
+        ],
+        "summary": "Get Agent Status",
+        "description": "Get the current agent status for an opening.",
+        "operationId": "get_agent_status_job_openings__opening_id__agent_status_get",
+        "parameters": [
+          {
+            "name": "opening_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Opening Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job-openings/{opening_id}/agent/runs": {
+      "get": {
+        "tags": [
+          "resume-agent"
+        ],
+        "summary": "List Agent Runs",
+        "description": "List all agent runs for an opening, newest first.",
+        "operationId": "list_agent_runs_job_openings__opening_id__agent_runs_get",
+        "parameters": [
+          {
+            "name": "opening_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Opening Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentRunListItem"
+                  },
+                  "title": "Response List Agent Runs Job Openings  Opening Id  Agent Runs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job-openings/{opening_id}/email-agent/run": {
+      "post": {
+        "tags": [
+          "email-agent"
+        ],
+        "summary": "Start Email Agent Run",
+        "description": "Start a new email agent run for an opening. Returns 202 Accepted.\n\nReturns 409 if an email agent run is already in progress.",
+        "operationId": "start_email_agent_run_job_openings__opening_id__email_agent_run_post",
+        "parameters": [
+          {
+            "name": "opening_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Opening Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailAgentStartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailAgentRunResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job-openings/{opening_id}/email-agent/stream": {
+      "get": {
+        "tags": [
+          "email-agent"
+        ],
+        "summary": "Stream Email Agent Events",
+        "description": "SSE endpoint for streaming email agent events.\n\nPolls the email_agent_runs table and yields new events as SSE messages.\nIncludes a heartbeat every 5 seconds.",
+        "operationId": "stream_email_agent_events_job_openings__opening_id__email_agent_stream_get",
+        "parameters": [
+          {
+            "name": "opening_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Opening Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job-openings/{opening_id}/email-agent/status": {
+      "get": {
+        "tags": [
+          "email-agent"
+        ],
+        "summary": "Get Email Agent Status",
+        "description": "Get the current email agent status for an opening.",
+        "operationId": "get_email_agent_status_job_openings__opening_id__email_agent_status_get",
+        "parameters": [
+          {
+            "name": "opening_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Opening Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailAgentStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job-openings/{opening_id}/email-agent/runs": {
+      "get": {
+        "tags": [
+          "email-agent"
+        ],
+        "summary": "List Email Agent Runs",
+        "description": "List all email agent runs for an opening, newest first.",
+        "operationId": "list_email_agent_runs_job_openings__opening_id__email_agent_runs_get",
+        "parameters": [
+          {
+            "name": "opening_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Opening Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmailAgentRunListItem"
+                  },
+                  "title": "Response List Email Agent Runs Job Openings  Opening Id  Email Agent Runs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job-openings/{opening_id}/email-agent/resume": {
+      "post": {
+        "tags": [
+          "email-agent"
+        ],
+        "summary": "Resume Email Agent",
+        "description": "Resume a paused email agent run after human-in-the-loop edits.\n\nAccepts user_edits in the request body, updates the run state,\nand resumes graph execution.",
+        "operationId": "resume_email_agent_job_openings__opening_id__email_agent_resume_post",
+        "parameters": [
+          {
+            "name": "opening_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Opening Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailAgentResumeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Resume Email Agent Job Openings  Opening Id  Email Agent Resume Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job-openings/{opening_id}/email-agent/output": {
+      "get": {
+        "tags": [
+          "email-agent"
+        ],
+        "summary": "Get Email Agent Output",
+        "description": "Get the final output from the latest succeeded email agent run.",
+        "operationId": "get_email_agent_output_job_openings__opening_id__email_agent_output_get",
+        "parameters": [
+          {
+            "name": "opening_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Opening Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailAgentOutputResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AgentRunListItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "opening_id": {
+            "type": "integer",
+            "title": "Opening Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "current_node": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Node"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "opening_id",
+          "status",
+          "started_at",
+          "created_at"
+        ],
+        "title": "AgentRunListItem",
+        "description": "Single item in the agent runs list."
+      },
+      "AgentRunResponse": {
+        "properties": {
+          "run_id": {
+            "type": "integer",
+            "title": "Run Id"
+          },
+          "opening_id": {
+            "type": "integer",
+            "title": "Opening Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "opening_id",
+          "status",
+          "message"
+        ],
+        "title": "AgentRunResponse",
+        "description": "Response for POST /run \u2014 returns 202 with the new run ID."
+      },
+      "AgentStatusResponse": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "opening_id": {
+            "type": "integer",
+            "title": "Opening Id"
+          },
+          "agent_status": {
+            "type": "string",
+            "title": "Agent Status"
+          },
+          "current_node": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Node"
+          },
+          "events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Events",
+            "default": []
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "opening_id",
+          "agent_status"
+        ],
+        "title": "AgentStatusResponse",
+        "description": "Response for GET /status \u2014 current agent state."
+      },
+      "EmailAgentOutputResponse": {
+        "properties": {
+          "generated_emails": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Generated Emails",
+            "default": []
+          },
+          "subject_lines": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Subject Lines",
+            "default": []
+          },
+          "followup_drafts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Followup Drafts",
+            "default": []
+          },
+          "outreach_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outreach Status"
+          }
+        },
+        "type": "object",
+        "title": "EmailAgentOutputResponse",
+        "description": "The final output of a completed email agent run."
+      },
+      "EmailAgentResumeRequest": {
+        "properties": {
+          "user_edits": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "User Edits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_edits"
+        ],
+        "title": "EmailAgentResumeRequest",
+        "description": "Request body for resuming a paused email agent run (HITL)."
+      },
+      "EmailAgentRunListItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "opening_id": {
+            "type": "integer",
+            "title": "Opening Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "current_node": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Node"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "opening_id",
+          "status",
+          "created_at"
+        ],
+        "title": "EmailAgentRunListItem",
+        "description": "Single item in the email agent runs list."
+      },
+      "EmailAgentRunResponse": {
+        "properties": {
+          "run_id": {
+            "type": "integer",
+            "title": "Run Id"
+          },
+          "opening_id": {
+            "type": "integer",
+            "title": "Opening Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "opening_id",
+          "status",
+          "message"
+        ],
+        "title": "EmailAgentRunResponse",
+        "description": "Response for POST /run \u2014 returns 202 with the new run ID."
+      },
+      "EmailAgentStartRequest": {
+        "properties": {
+          "recipient_type": {
+            "type": "string",
+            "title": "Recipient Type",
+            "default": "recruiter"
+          },
+          "raw_jd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Jd"
+          },
+          "raw_resume": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Resume"
+          }
+        },
+        "type": "object",
+        "title": "EmailAgentStartRequest",
+        "description": "Request body for starting an email agent run."
+      },
+      "EmailAgentStatusResponse": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "opening_id": {
+            "type": "integer",
+            "title": "Opening Id"
+          },
+          "agent_status": {
+            "type": "string",
+            "title": "Agent Status"
+          },
+          "current_node": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Node"
+          },
+          "events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Events",
+            "default": []
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "opening_id",
+          "agent_status"
+        ],
+        "title": "EmailAgentStatusResponse",
+        "description": "Response for GET /status \u2014 current agent state."
+      },
       "ExtractedDetailsResponse": {
         "properties": {
           "job_title": {
@@ -6015,17 +7128,6 @@
               }
             ],
             "title": "Employment Type"
-          },
-          "salary_range": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Salary Range"
           },
           "description_summary": {
             "anyOf": [
@@ -6120,6 +7222,84 @@
               }
             ],
             "title": "Source Url"
+          },
+          "role_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Summary"
+          },
+          "technical_keywords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technical Keywords"
+          },
+          "sector_keywords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector Keywords"
+          },
+          "business_sectors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Sectors"
+          },
+          "problem_being_solved": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Being Solved"
+          },
+          "useful_experiences": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useful Experiences"
           },
           "extraction_run_id": {
             "type": "integer",
@@ -6664,6 +7844,17 @@
             "type": "string",
             "title": "Company Name"
           },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
           "start_month_year": {
             "type": "string",
             "title": "Start Month Year"
@@ -6738,6 +7929,17 @@
           "company_name": {
             "type": "string",
             "title": "Company Name"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
           },
           "start_month_year": {
             "type": "string",
@@ -6822,6 +8024,17 @@
               }
             ],
             "title": "Company Name"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
           },
           "start_month_year": {
             "anyOf": [
@@ -7137,6 +8350,14 @@
             "type": "array",
             "title": "Reference Links",
             "default": []
+          },
+          "technologies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Technologies",
+            "default": []
           }
         },
         "type": "object",
@@ -7203,6 +8424,14 @@
             },
             "type": "array",
             "title": "Reference Links",
+            "default": []
+          },
+          "technologies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Technologies",
             "default": []
           },
           "created_at": {
@@ -7287,6 +8516,20 @@
               }
             ],
             "title": "Reference Links"
+          },
+          "technologies": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technologies"
           }
         },
         "type": "object",
@@ -7307,6 +8550,28 @@
             "type": "string",
             "title": "Description",
             "default": ""
+          },
+          "journal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Journal"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
           }
         },
         "type": "object",
@@ -7349,6 +8614,28 @@
           "description": {
             "type": "string",
             "title": "Description"
+          },
+          "journal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Journal"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
           },
           "created_at": {
             "type": "string",
@@ -7408,6 +8695,28 @@
               }
             ],
             "title": "Description"
+          },
+          "journal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Journal"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
           }
         },
         "type": "object",
@@ -7687,6 +8996,44 @@
         "title": "JobProfileUpdate",
         "description": "Request schema for partially updating a job profile (all fields optional)."
       },
+      "LinkedInImportRequest": {
+        "properties": {
+          "linkedin_url": {
+            "type": "string",
+            "title": "Linkedin Url",
+            "description": "LinkedIn profile URL to import"
+          }
+        },
+        "type": "object",
+        "required": [
+          "linkedin_url"
+        ],
+        "title": "LinkedInImportRequest",
+        "description": "Request to import a LinkedIn profile."
+      },
+      "LinkedInImportResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "sections_imported": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Sections Imported",
+            "description": "Count of entries imported per section"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "sections_imported"
+        ],
+        "title": "LinkedInImportResponse",
+        "description": "Response after LinkedIn import completes."
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -7706,6 +9053,231 @@
         ],
         "title": "LoginRequest",
         "description": "Payload required to log a user in."
+      },
+      "ManualExtractedDetailsCreate": {
+        "properties": {
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Title"
+          },
+          "company_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Name"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "employment_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employment Type"
+          },
+          "description_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Summary"
+          },
+          "required_skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Skills"
+          },
+          "preferred_skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Skills"
+          },
+          "experience_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experience Level"
+          },
+          "posted_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posted Date"
+          },
+          "application_deadline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Application Deadline"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "role_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Summary"
+          },
+          "technical_keywords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technical Keywords"
+          },
+          "sector_keywords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector Keywords"
+          },
+          "business_sectors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Sectors"
+          },
+          "problem_being_solved": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Being Solved"
+          },
+          "useful_experiences": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useful Experiences"
+          },
+          "extra_raw": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Raw",
+            "description": "Merged into stored raw_payload beside source marker"
+          }
+        },
+        "type": "object",
+        "title": "ManualExtractedDetailsCreate",
+        "description": "User-provided snapshot for tailoring when crawl/LLM extraction is unavailable."
       },
       "OpeningCreate": {
         "properties": {
@@ -8012,6 +9584,39 @@
               }
             ],
             "title": "Portfolio Url"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
           }
         },
         "type": "object",
@@ -8082,6 +9687,39 @@
               }
             ],
             "title": "Portfolio Url"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
           }
         },
         "type": "object",
@@ -8395,6 +10033,12 @@
             "type": "integer",
             "title": "Job Profile Id"
           },
+          "status": {
+            "type": "string",
+            "const": "completed",
+            "title": "Status",
+            "default": "completed"
+          },
           "template_name": {
             "type": "string",
             "title": "Template Name"
@@ -8408,6 +10052,41 @@
             "additionalProperties": true,
             "type": "object",
             "title": "Layout Json"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
           }
         },
         "type": "object",
@@ -9252,6 +10931,22 @@
             ],
             "title": "Description"
           },
+          "bullet_points": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Bullet Points",
+            "default": []
+          },
+          "reference_links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reference Links",
+            "default": []
+          },
           "display_order": {
             "type": "integer",
             "title": "Display Order",
@@ -9344,6 +11039,22 @@
               }
             ],
             "title": "Description"
+          },
+          "bullet_points": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Bullet Points",
+            "default": []
+          },
+          "reference_links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reference Links",
+            "default": []
           },
           "display_order": {
             "type": "integer",
@@ -9439,6 +11150,34 @@
             ],
             "title": "Description"
           },
+          "bullet_points": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bullet Points"
+          },
+          "reference_links": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Links"
+          },
           "display_order": {
             "anyOf": [
               {
@@ -9513,6 +11252,22 @@
               }
             ],
             "title": "Description"
+          },
+          "bullet_points": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Bullet Points",
+            "default": []
+          },
+          "work_sample_links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Work Sample Links",
+            "default": []
           },
           "display_order": {
             "type": "integer",
@@ -9594,6 +11349,22 @@
               }
             ],
             "title": "Description"
+          },
+          "bullet_points": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Bullet Points",
+            "default": []
+          },
+          "work_sample_links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Work Sample Links",
+            "default": []
           },
           "display_order": {
             "type": "integer",
@@ -9689,6 +11460,34 @@
               }
             ],
             "title": "Description"
+          },
+          "bullet_points": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bullet Points"
+          },
+          "work_sample_links": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Sample Links"
           },
           "display_order": {
             "anyOf": [
@@ -9787,6 +11586,14 @@
             ],
             "title": "Technologies"
           },
+          "reference_links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reference Links",
+            "default": []
+          },
           "display_order": {
             "type": "integer",
             "title": "Display Order",
@@ -9871,6 +11678,14 @@
               }
             ],
             "title": "Technologies"
+          },
+          "reference_links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reference Links",
+            "default": []
           },
           "display_order": {
             "type": "integer",
@@ -9957,6 +11772,20 @@
               }
             ],
             "title": "Technologies"
+          },
+          "reference_links": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Links"
           },
           "display_order": {
             "anyOf": [
@@ -10506,6 +12335,17 @@
             "type": "string",
             "title": "Company Name"
           },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
           "start_month_year": {
             "type": "string",
             "title": "Start Month Year"
@@ -10522,8 +12362,16 @@
             "title": "End Month Year"
           },
           "context": {
-            "type": "string",
-            "title": "Context"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context",
+            "default": ""
           },
           "work_sample_links": {
             "items": {
@@ -10546,8 +12394,7 @@
         "required": [
           "role_title",
           "company_name",
-          "start_month_year",
-          "context"
+          "start_month_year"
         ],
         "title": "ExperienceCreate",
         "description": "Request schema for creating or updating an experience entry."
@@ -10569,6 +12416,17 @@
           "company_name": {
             "type": "string",
             "title": "Company Name"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
           },
           "start_month_year": {
             "type": "string",
@@ -10654,6 +12512,17 @@
             ],
             "title": "Company Name"
           },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
           "start_month_year": {
             "anyOf": [
               {
@@ -10730,6 +12599,14 @@
             "type": "string",
             "title": "Description"
           },
+          "technologies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Technologies",
+            "default": []
+          },
           "start_month_year": {
             "type": "string",
             "title": "Start Month Year"
@@ -10780,6 +12657,14 @@
           "description": {
             "type": "string",
             "title": "Description"
+          },
+          "technologies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Technologies",
+            "default": []
           },
           "start_month_year": {
             "type": "string",
@@ -10887,6 +12772,20 @@
               }
             ],
             "title": "Reference Links"
+          },
+          "technologies": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technologies"
           }
         },
         "type": "object",
@@ -10913,6 +12812,28 @@
               }
             ],
             "title": "Description"
+          },
+          "journal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Journal"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
           }
         },
         "type": "object",
@@ -10951,6 +12872,28 @@
               }
             ],
             "title": "Description"
+          },
+          "journal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Journal"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
           },
           "created_at": {
             "type": "string",
@@ -11009,6 +12952,28 @@
               }
             ],
             "title": "Description"
+          },
+          "journal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Journal"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
           }
         },
         "type": "object",

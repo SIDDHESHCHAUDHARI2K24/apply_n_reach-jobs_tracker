@@ -51,3 +51,11 @@ export interface ORSkillItem {
   proficiency_level: string | null
   display_order: number
 }
+
+export interface OpeningResumeRenderMetadata {
+  resume_id: string
+  template_name: string
+  updated_at: string
+  latex_length: number
+  pdf_size_bytes: number
+}

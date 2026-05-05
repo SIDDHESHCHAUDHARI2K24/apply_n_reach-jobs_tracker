@@ -96,7 +96,8 @@ async def aggregate_opening_resume_data(
 
     personal_row = await conn.fetchrow(
         """
-        SELECT full_name, email, linkedin_url, github_url, portfolio_url
+        SELECT full_name, email, phone, location, summary,
+               linkedin_url, github_url, portfolio_url
         FROM job_opening_personal
         WHERE resume_id = $1
         """,
@@ -111,10 +112,7 @@ async def aggregate_opening_resume_data(
             degree AS degree_type,
             start_date AS start_month_year,
             end_date AS end_month_year,
-            CASE
-                WHEN description IS NULL OR btrim(description) = '' THEN ARRAY[]::text[]
-                ELSE ARRAY[description]
-            END AS bullet_points
+            bullet_points
         FROM job_opening_education
         WHERE resume_id = $1
         ORDER BY display_order ASC, id ASC
@@ -134,8 +132,8 @@ async def aggregate_opening_resume_data(
                 ELSE end_date
             END AS end_month_year,
             description AS context,
-            ARRAY[]::text[] AS bullet_points,
-            ARRAY[]::text[] AS work_sample_links
+            bullet_points,
+            work_sample_links
         FROM job_opening_experience
         WHERE resume_id = $1
         ORDER BY display_order ASC, id ASC
@@ -150,10 +148,8 @@ async def aggregate_opening_resume_data(
             description,
             start_date AS start_month_year,
             end_date AS end_month_year,
-            CASE
-                WHEN url IS NULL OR btrim(url) = '' THEN ARRAY[]::text[]
-                ELSE ARRAY[url]
-            END AS reference_links
+            reference_links,
+            technologies
         FROM job_opening_projects
         WHERE resume_id = $1
         ORDER BY display_order ASC, id ASC
@@ -166,7 +162,9 @@ async def aggregate_opening_resume_data(
         SELECT
             title AS paper_name,
             url AS publication_link,
-            description
+            description,
+            publication AS journal,
+            published_date AS year
         FROM job_opening_research
         WHERE resume_id = $1
         ORDER BY display_order ASC, id ASC
