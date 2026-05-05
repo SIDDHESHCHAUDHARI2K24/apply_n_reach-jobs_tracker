@@ -90,14 +90,19 @@ async def _execute_run(conn, opening_id: int, run_id: int) -> None:
         raw_text = await asyncio.wait_for(crawl_url(opening["source_url"]), timeout=60.0)
 
         # Extract structured data
-        extracted = await extract_job_details(raw_text)
+        extracted = await extract_job_details(
+            raw_text,
+            source_url=opening["source_url"],
+            opening_id=opening_id,
+            run_id=run_id,
+        )
 
         # Persist snapshot
         await conn.execute(
             """
             INSERT INTO job_opening_extracted_details_versions (
                 run_id, opening_id, schema_version,
-                job_title, company_name, location, employment_type, salary_range,
+                job_title, company_name, location, employment_type,
                 description_summary, required_skills, preferred_skills,
                 experience_level, posted_date, application_deadline,
                 raw_payload, extractor_model, source_url,
@@ -105,12 +110,12 @@ async def _execute_run(conn, opening_id: int, run_id: int) -> None:
                 business_sectors, problem_being_solved, useful_experiences
             ) VALUES (
                 $1, $2, 1,
-                $3, $4, $5, $6, $7,
-                $8, $9::jsonb, $10::jsonb,
-                $11, $12, $13,
-                $14::jsonb, $15, $16,
-                $17, $18::jsonb, $19::jsonb,
-                $20::jsonb, $21, $22::jsonb
+                $3, $4, $5, $6,
+                $7, $8::jsonb, $9::jsonb,
+                $10, $11, $12,
+                $13::jsonb, $14, $15,
+                $16, $17::jsonb, $18::jsonb,
+                $19::jsonb, $20, $21::jsonb
             )
             """,
             run_id,
@@ -119,7 +124,6 @@ async def _execute_run(conn, opening_id: int, run_id: int) -> None:
             extracted.company_name,
             extracted.location,
             extracted.employment_type,
-            extracted.salary_range,
             extracted.description_summary,
             json.dumps(extracted.required_skills or []),
             json.dumps(extracted.preferred_skills or []),
