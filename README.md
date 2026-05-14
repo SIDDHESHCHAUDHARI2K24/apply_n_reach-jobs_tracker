@@ -1,4 +1,4 @@
-# FastAPI Tutorial T2
+# Capstone Project
 
 This repository is a full-stack job-tracker application:
 
